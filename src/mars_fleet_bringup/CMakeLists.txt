@@ -7,6 +7,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
+find_package(catch_ros2 REQUIRED)
 find_package(Doxygen REQUIRED)    # add doxygen support
 
 ###################################################
@@ -69,6 +70,26 @@ doxygen_add_docs(docs           # target name
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+
+  add_executable(test_slam_map_topic
+    test/test_slam_map_topic.cpp
+  )
+
+  ament_target_dependencies(test_slam_map_topic
+    rclcpp
+  )
+
+  target_link_libraries(test_slam_map_topic
+    catch_ros2::catch_ros2_with_node_main
+  )
+
+  install(TARGETS test_slam_map_topic
+    DESTINATION lib/${PROJECT_NAME}
+  )
+
+  catch_ros2_add_integration_test(SlamMapTopic_Test
+    LAUNCH_FILE test_slam_map_topic.launch.py
+  )
 
   ament_add_gtest(test_build_passes
     test/test_build_passes.cpp
