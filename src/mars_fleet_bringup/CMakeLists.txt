@@ -7,7 +7,6 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(catch_ros2 REQUIRED)
 find_package(Doxygen REQUIRED)    # add doxygen support
 
 ###################################################
@@ -70,6 +69,29 @@ doxygen_add_docs(docs           # target name
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(rclcpp REQUIRED)
+  find_package(catch_ros2 REQUIRED)
+
+  add_executable(test_robot_namespace_topics
+    test/test_robot_namespace_topics.cpp
+  )
+
+  ament_target_dependencies(test_robot_namespace_topics
+    rclcpp
+  )
+
+  # Use the "with node main" target so ROS init/shutdown is handled
+  target_link_libraries(test_robot_namespace_topics
+    catch_ros2::catch_ros2_with_node_main
+  )
+
+  install(TARGETS test_robot_namespace_topics
+    DESTINATION lib/${PROJECT_NAME}
+  )
+
+  catch_ros2_add_integration_test(RobotNamespaceTopics_Test
+    LAUNCH_FILE test_robot_namespace_topics.launch.py
+  )
 
   add_executable(test_slam_map_topic
     test/test_slam_map_topic.cpp
