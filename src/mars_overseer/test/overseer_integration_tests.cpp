@@ -65,7 +65,7 @@ protected:
    nav_msgs/msg/OccupancyGrid message.
    */
 
-TEST_CASE_METHOD (MyTestsFixture, "Test slam_tool map subscription", "[map]") {
+TEST_CASE_METHOD (MyTestsFixture, "Test slam_tool map subscription robot 1", "[map 1]") {
 
   bool got_map = false;
 
@@ -108,3 +108,107 @@ TEST_CASE_METHOD (MyTestsFixture, "Test slam_tool map subscription", "[map]") {
 
   CHECK(got_map);   // Assert that we received at least one map
 }
+
+
+////////////////////////////////////////////////
+// Test Case 2
+////////////////////////////////////////////////
+
+/*
+
+*/
+TEST_CASE_METHOD (MyTestsFixture, "Test slam_tool map subscription robot 2", "[map 2]") {
+
+  bool got_map = false;
+
+  // Create callback looking for nav_msgs/msg/OccupancyGrid messages
+  auto map_callback = 
+    [&got_map](const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+    {
+        RCLCPP_INFO(Logger, "Received map: [%u x %u], res=%.3f",
+                    msg->info.width,
+                    msg->info.height,
+                    msg->info.resolution);
+        got_map = true;
+    };
+
+  auto qos = rclcpp::QoS(10).transient_local().reliable();
+  auto subscriber_ = overseerTesterNode->create_subscription<nav_msgs::msg::OccupancyGrid> (
+    "/robot_2/map", // added robot_2 namespace to topic
+    qos,
+    map_callback);
+
+
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(overseerTesterNode);
+
+ // Use ROS time
+  auto start_time = overseerTesterNode->now();
+  auto timeout = rclcpp::Duration::from_seconds(TEST_DURATION);
+
+  rclcpp::Rate rate(10.0);  // 10 Hz
+
+  while (!got_map && (overseerTesterNode->now() - start_time) < timeout) {
+    exec.spin_some();   // Process callbacks
+    rate.sleep();
+  }
+
+  RCLCPP_INFO_STREAM(Logger,
+                     "duration = "
+                     << (overseerTesterNode->now() - start_time).seconds()
+                     << " got_map=" << got_map);
+
+  CHECK(got_map);   // Assert that we received at least one map
+}
+
+////////////////////////////////////////////////
+// Test Case 3
+////////////////////////////////////////////////
+
+/*
+
+*/
+
+TEST_CASE_METHOD (MyTestsFixture, "Test global map production", "[global_map]") {
+
+  bool got_global_map = false;
+
+  // Create callback looking for nav_msgs/msg/OccupancyGrid messages
+  auto map_callback = 
+    [&got_global_map](const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+    {
+        RCLCPP_INFO(Logger, "Received map: [%u x %u], res=%.3f",
+                    msg->info.width,
+                    msg->info.height,
+                    msg->info.resolution);
+        got_global_map = true;
+    };
+
+  auto qos = rclcpp::QoS(10).transient_local().reliable();
+  auto subscriber_ = overseerTesterNode->create_subscription<nav_msgs::msg::OccupancyGrid> (
+    "/global_map",
+    qos,
+    map_callback);
+
+  rclcpp::executors::SingleThreadedExecutor exec;
+  exec.add_node(overseerTesterNode);
+
+ // Use ROS time
+  auto start_time = overseerTesterNode->now();
+  auto timeout = rclcpp::Duration::from_seconds(TEST_DURATION);
+
+  rclcpp::Rate rate(10.0);  // 10 Hz
+
+  while (!got_global_map && (overseerTesterNode->now() - start_time) < timeout) {
+    exec.spin_some();   // Process callbacks
+    rate.sleep();
+  }
+
+  RCLCPP_INFO_STREAM(Logger,
+                     "duration = "
+                     << (overseerTesterNode->now() - start_time).seconds()
+                     << " got_global_map =" << got_global_map);
+
+  CHECK(got_global_map);   // Assert that we received at least one map
+}
+
