@@ -14,6 +14,7 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(Doxygen REQUIRED)    # add doxygen support
+find_package(catch_ros2 REQUIRED)
 
 ###################################################
 # Create the compilation database for clangd and move it out of the build dir.
@@ -85,10 +86,33 @@ if(BUILD_TESTING)
     test/test_build_passes.cpp
   )
 
-  # Link any dependencies your tests need:
-  target_link_libraries(test_build_passes
-    # ${PROJECT_NAME}
+  add_executable(overseer_integration_tests
+  test/overseer_integration_tests.cpp)
+
+  target_link_libraries(overseer_integration_tests
+  catch_ros2::catch_ros2_with_node_main)
+
+  ament_target_dependencies(overseer_integration_tests
+  rclcpp std_msgs nav_msgs)
+
+  install(TARGETS
+  overseer_integration_tests
+  DESTINATION lib/${PROJECT_NAME}
   )
+
+  # This CMake function allows the integration test to be run
+  # when running "colcon test".
+  catch_ros2_add_integration_test (integration_test
+    LAUNCH_FILE integration_tests.launch.yaml
+
+    )
+
 endif()
+
+install(DIRECTORY
+  launch
+  
+  DESTINATION share/${PROJECT_NAME}/
+)
 
 ament_package()
