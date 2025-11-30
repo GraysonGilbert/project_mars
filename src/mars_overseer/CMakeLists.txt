@@ -16,6 +16,31 @@ find_package(tf2_ros REQUIRED)
 find_package(Doxygen REQUIRED)    # add doxygen support
 find_package(catch_ros2 REQUIRED)
 
+# Create Executables and Libraries for package
+
+add_library(overseer_lib
+    src/map_merger.cpp
+)
+target_include_directories(overseer_lib PUBLIC
+    include
+)
+
+# Link dependencies
+ament_target_dependencies(overseer_lib
+    rclcpp
+    nav_msgs
+    std_msgs
+    geometry_msgs
+    tf2
+    tf2_ros
+)
+
+# Install the executable
+install(TARGETS
+  overseer_lib
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 ###################################################
 # Create the compilation database for clangd and move it out of the build dir.
 ###################################################
