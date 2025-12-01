@@ -1,6 +1,7 @@
 /**
  * @file map_merger.hpp
  * @author your name (you@domain.com)
+ * @author your name (you@domain.com)
  * @brief 
  * @version 0.1
  * @date 2025-11-30
@@ -26,7 +27,7 @@
 class MapMerger {
     public:
 
-        explicit MapMerger(double max_map_age_sec);
+        explicit MapMerger(double max_map_age_sec=10.0);
 
 
         nav_msgs::msg::OccupancyGrid initialize_global_map(double min_x, double min_y, double max_x, double max_y, double resolution) const;  
