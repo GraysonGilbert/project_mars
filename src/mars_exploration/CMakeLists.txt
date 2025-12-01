@@ -8,9 +8,14 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(std_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(pluginlib REQUIRED)
+find_package(webots_ros2_driver REQUIRED)
+find_package(nav2_msgs REQUIRED)
+find_package(nav2_bt_navigator REQUIRED)
+find_package(slam_toolbox REQUIRED)
+
 find_package(Doxygen REQUIRED)    # add doxygen support
 
 ###################################################
@@ -76,15 +81,13 @@ doxygen_add_docs(docs           # target name
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
+  find_package(Catch2 REQUIRED)
 
-  ament_add_gtest(test_build_passes
-    test/test_build_passes.cpp
+  ament_add_gtest(mars_exploration_tests
+    test/mars_exploration_tests.cpp
   )
-
-  # Link any dependencies your tests need:
-  target_link_libraries(test_build_passes
-    # ${PROJECT_NAME}
-  )
+  target_link_libraries(mars_exploration_tests mars_exploration)
+  ament_target_dependencies(mars_exploration_tests nav2_msgs)
 endif()
 
 ament_package()
