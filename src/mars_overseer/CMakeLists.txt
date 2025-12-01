@@ -20,6 +20,7 @@ find_package(catch_ros2 REQUIRED)
 
 add_library(overseer_lib
     src/map_merger.cpp
+    src/overseer.cpp
 )
 target_include_directories(overseer_lib PUBLIC
     include
@@ -34,9 +35,24 @@ ament_target_dependencies(overseer_lib
     tf2
     tf2_ros
 )
+add_executable(overseer_node src/overseer.cpp)
+
+# Link the executable against the library
+target_link_libraries(overseer_node overseer_lib)
+
+
+ament_target_dependencies(overseer_node
+    rclcpp
+    nav_msgs
+    std_msgs
+    geometry_msgs
+    tf2
+    tf2_ros
+)
 
 # Install the executable
 install(TARGETS
+  overseer_node
   overseer_lib
   DESTINATION lib/${PROJECT_NAME}
 )
