@@ -1,0 +1,18 @@
+launch:
+
+- catch2_launch_file:
+    description: "Catch2 integration test launch file for Mars Exploration"
+
+- arg:
+    name: "test_duration"
+    default: "5.0"
+    description: "Max length of test in seconds."
+
+# The Catch2 test node
+- catch2_integration_test_node:
+    pkg: "mars_exploration"
+    exec: "mars_exploration_integration_test_node"
+    param:
+    -
+      name: "test_duration"
+      value: "$(var test_duration)"
