@@ -66,18 +66,43 @@ doxygen_add_docs(docs           # target name
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/test)
 
-# add_executable(sector_explorer_node src/sector_explorer_node.cpp)
-# target_include_directories(sector_explorer_node PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# ament_target_dependencies(sector_explorer_node
-#   rclcpp
-#   nav_msgs
-#   geometry_msgs
-#   std_msgs)
-#
-# install(TARGETS sector_explorer_node
-#   DESTINATION lib/${PROJECT_NAME})
+# MarsExploration library
+add_library(mars_exploration
+  src/mars_exploration.cpp
+)
+ament_target_dependencies(mars_exploration
+  nav2_msgs
+)
+target_include_directories(
+  mars_exploration
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+install(TARGETS mars_exploration
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
+
+# Main executable for MarsExplorationNode
+add_executable(mars_exploration_node
+  src/mars_exploration_node.cpp
+)
+ament_target_dependencies(mars_exploration_node
+  rclcpp
+  geometry_msgs
+  sensor_msgs
+  nav2_msgs
+  nav2_bt_navigator
+  slam_toolbox
+)
+target_link_libraries(mars_exploration_node
+  mars_exploration
+)
+install(TARGETS mars_exploration_node
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
@@ -89,5 +114,24 @@ if(BUILD_TESTING)
   target_link_libraries(mars_exploration_tests mars_exploration)
   ament_target_dependencies(mars_exploration_tests nav2_msgs)
 endif()
+
+# Install additional directories.
+install(
+  DIRECTORY include/
+  DESTINATION include
+)
+install(DIRECTORY
+  launch
+  resource
+  worlds
+  DESTINATION share/${PROJECT_NAME}/
+)
+ament_export_include_directories(
+  include
+)
+ament_export_libraries(
+  ${PROJECT_NAME}
+  mars_webots_driver
+)
 
 ament_package()
