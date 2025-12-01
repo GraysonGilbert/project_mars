@@ -12,8 +12,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -24,21 +24,20 @@
  * SOFTWARE.
  */
 
-#include <catch_ros2/catch_ros2.hpp>
+#include <tf2_ros/static_transform_broadcaster.h>
 
+#include <catch_ros2/catch_ros2.hpp>
 #include <chrono>
+#include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <memory>
+#include <nav2_msgs/action/navigate_to_pose.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <std_msgs/msg/string.hpp>
 #include <string>
 #include <thread>
-
-#include <rclcpp/rclcpp.hpp>
-#include <std_msgs/msg/string.hpp>
-#include <geometry_msgs/msg/pose_stamped.hpp>
-#include <nav2_msgs/action/navigate_to_pose.hpp>
-#include <rclcpp_action/rclcpp_action.hpp>
-#include <tf2_ros/static_transform_broadcaster.h>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <nav_msgs/msg/occupancy_grid.hpp>
 
 #include "mars_exploration/mars_exploration_node.hpp"
 
@@ -49,20 +48,20 @@ using Catch::Approx;
 using PoseStamped = geometry_msgs::msg::PoseStamped;
 using OccupancyGrid = nav_msgs::msg::OccupancyGrid;
 
+class MarsExplorationNodeTestFixture {
+ public:
+  MarsExplorationNodeTestFixture() {
+    // Node used by the tests themselves (parameter source, extra subscriptions,
+    // etc.).
+    test_node_ =
+        rclcpp::Node::make_shared("mars_exploration_node_test_fixture");
 
-class MarsExplorationNodeTestFixture
-{
-public:
-  MarsExplorationNodeTestFixture()
-  {
-    // Node used by the tests themselves (parameter source, extra subscriptions, etc.).
-    test_node_ = rclcpp::Node::make_shared("mars_exploration_node_test_fixture");
-
-    // Allow the launch file to parameterize how long the test is allowed to run.
-    // If the parameter is not set, fall back to a small default.
+    // Allow the launch file to parameterize how long the test is allowed to
+    // run. If the parameter is not set, fall back to a small default.
     test_node_->declare_parameter<double>("test_duration", 2.0);
-    test_duration_ =
-      test_node_->get_parameter("test_duration").get_parameter_value().get<double>();
+    test_duration_ = test_node_->get_parameter("test_duration")
+                         .get_parameter_value()
+                         .get<double>();
   }
 
   std::shared_ptr<rclcpp::Node> test_node_;
@@ -70,9 +69,7 @@ public:
 };
 
 TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
-                 "mars_exploration_node startup",
-                 "[integration][startup]")
-{
+                 "mars_exploration_node startup", "[integration][startup]") {
   auto node = std::make_shared<MarsExplorationNode>();
 
   REQUIRE(node != nullptr);
@@ -87,8 +84,7 @@ TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
 
 TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
                  "mars_exploration_node supports subscriptions and publishers",
-                 "[integration][ros2_api]")
-{
+                 "[integration][ros2_api]") {
   auto node = std::make_shared<MarsExplorationNode>();
 
   // Create a pub/sub pair that goes through the rclcpp graph.
@@ -97,11 +93,8 @@ TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
   auto received = std::make_shared<bool>(false);
 
   auto sub = test_node_->create_subscription<String>(
-      "test_topic",
-      rclcpp::QoS(10),
-      [received](String::ConstSharedPtr /*msg*/) {
-        *received = true;
-      });
+      "test_topic", rclcpp::QoS(10),
+      [received](String::ConstSharedPtr /*msg*/) { *received = true; });
 
   (void)sub;
 
@@ -116,13 +109,11 @@ TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
   msg.data = "hello from mars_exploration_node_tests";
   pub->publish(msg);
 
-  auto timeout = std::chrono::milliseconds(
-      static_cast<int>(test_duration_ * 1000.0));
+  auto timeout =
+      std::chrono::milliseconds(static_cast<int>(test_duration_ * 1000.0));
 
   auto start = std::chrono::steady_clock::now();
-  while (!*received &&
-         (std::chrono::steady_clock::now() - start) < timeout)
-  {
+  while (!*received && (std::chrono::steady_clock::now() - start) < timeout) {
     exec.spin_some();
     std::this_thread::sleep_for(10ms);
   }
@@ -130,8 +121,7 @@ TEST_CASE_METHOD(MarsExplorationNodeTestFixture,
   CHECK(*received);
 }
 
-TEST_CASE("mars_exploration_node default parameters", "[params][defaults]")
-{
+TEST_CASE("mars_exploration_node default parameters", "[params][defaults]") {
   auto node = std::make_shared<MarsExplorationNode>();
 
   std::string goal_topic;
@@ -155,15 +145,15 @@ TEST_CASE("mars_exploration_node default parameters", "[params][defaults]")
   CHECK(control_rate_hz == Approx(20.0));
 }
 
-TEST_CASE("mars_exploration_node respects parameter overrides", "[params][overrides]")
-{
+TEST_CASE("mars_exploration_node respects parameter overrides",
+          "[params][overrides]") {
   rclcpp::NodeOptions opts;
   opts.parameter_overrides({
-    rclcpp::Parameter("goal_topic", "/alt_goal"),
-    rclcpp::Parameter("cmd_vel_topic", "/alt_cmd_vel"),
-    rclcpp::Parameter("global_frame", "odom"),
-    rclcpp::Parameter("base_frame", "base_footprint"),
-    rclcpp::Parameter("control_rate_hz", 5.0),
+      rclcpp::Parameter("goal_topic", "/alt_goal"),
+      rclcpp::Parameter("cmd_vel_topic", "/alt_cmd_vel"),
+      rclcpp::Parameter("global_frame", "odom"),
+      rclcpp::Parameter("base_frame", "base_footprint"),
+      rclcpp::Parameter("control_rate_hz", 5.0),
   });
 
   auto node = std::make_shared<MarsExplorationNode>(opts);
@@ -181,41 +171,32 @@ TEST_CASE("mars_exploration_node respects parameter overrides", "[params][overri
   CHECK(control_rate_hz == Approx(5.0));
 }
 
-struct NavigateToPoseTestFixture
-{
-  NavigateToPoseTestFixture()
-  {
+struct NavigateToPoseTestFixture {
+  NavigateToPoseTestFixture() {
     test_node = rclcpp::Node::make_shared("navigate_to_pose_test_fixture");
 
     // Simple fake server that just captures the last goal pose.
     using GoalHandle = rclcpp_action::ServerGoalHandle<NavigateToPose>;
 
-    auto handle_goal =
-      [this](
-        const rclcpp_action::GoalUUID &,
-        std::shared_ptr<const NavigateToPose::Goal> goal) -> rclcpp_action::GoalResponse
-      {
-        last_goal_pose = goal->pose;
-        got_goal = true;
-        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-      };
+    auto handle_goal = [this](const rclcpp_action::GoalUUID &,
+                              std::shared_ptr<const NavigateToPose::Goal> goal)
+        -> rclcpp_action::GoalResponse {
+      last_goal_pose = goal->pose;
+      got_goal = true;
+      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    };
 
-    auto handle_cancel =
-      [](std::shared_ptr<GoalHandle>) {
-        return rclcpp_action::CancelResponse::ACCEPT;
-      };
+    auto handle_cancel = [](std::shared_ptr<GoalHandle>) {
+      return rclcpp_action::CancelResponse::ACCEPT;
+    };
 
-    auto handle_accepted =
-      [](std::shared_ptr<GoalHandle>) {
-        // No-op; we don't need to send a result for this test.
-      };
+    auto handle_accepted = [](std::shared_ptr<GoalHandle>) {
+      // No-op; we don't need to send a result for this test.
+    };
 
     server = rclcpp_action::create_server<NavigateToPose>(
-      test_node,
-      "navigate_to_pose",
-      handle_goal,
-      handle_cancel,
-      handle_accepted);
+        test_node, "navigate_to_pose", handle_goal, handle_cancel,
+        handle_accepted);
   }
 
   std::shared_ptr<rclcpp::Node> test_node;
@@ -227,15 +208,14 @@ struct NavigateToPoseTestFixture
 
 TEST_CASE_METHOD(NavigateToPoseTestFixture,
                  "goal pose publishes NavigateToPose goal",
-                 "[integration][nav2]")
-{
+                 "[integration][nav2]") {
   auto mars_node = std::make_shared<MarsExplorationNode>();
 
   std::string goal_topic;
   REQUIRE(mars_node->get_parameter("goal_topic", goal_topic));
 
-  auto goal_pub =
-    test_node->create_publisher<geometry_msgs::msg::PoseStamped>(goal_topic, 10);
+  auto goal_pub = test_node->create_publisher<geometry_msgs::msg::PoseStamped>(
+      goal_topic, 10);
 
   rclcpp::executors::SingleThreadedExecutor exec;
   exec.add_node(mars_node);
@@ -271,49 +251,39 @@ TEST_CASE_METHOD(NavigateToPoseTestFixture,
   CHECK(last_goal_pose.header.frame_id == "map");
 }
 
-class MarsExplorationNavFixture
-{
-public:
+class MarsExplorationNavFixture {
+ public:
   MarsExplorationNavFixture()
-  : test_node_(rclcpp::Node::make_shared("mars_exploration_nav_fixture")),
-    tf_broadcaster_(test_node_),
-    got_goal_(false),
-    goal_count_(0)
-  {
+      : test_node_(rclcpp::Node::make_shared("mars_exploration_nav_fixture")),
+        tf_broadcaster_(test_node_),
+        got_goal_(false),
+        goal_count_(0) {
     using GoalHandle = rclcpp_action::ServerGoalHandle<NavigateToPose>;
 
-    auto handle_goal =
-      [this](
-        const rclcpp_action::GoalUUID &,
-        std::shared_ptr<const NavigateToPose::Goal> goal) -> rclcpp_action::GoalResponse
-      {
-        last_goal_pose_ = goal->pose;
-        got_goal_ = true;
-        goal_count_++;
-        return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
-      };
+    auto handle_goal = [this](const rclcpp_action::GoalUUID &,
+                              std::shared_ptr<const NavigateToPose::Goal> goal)
+        -> rclcpp_action::GoalResponse {
+      last_goal_pose_ = goal->pose;
+      got_goal_ = true;
+      goal_count_++;
+      return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
+    };
 
-    auto handle_cancel =
-      [](std::shared_ptr<GoalHandle>) {
-        return rclcpp_action::CancelResponse::ACCEPT;
-      };
+    auto handle_cancel = [](std::shared_ptr<GoalHandle>) {
+      return rclcpp_action::CancelResponse::ACCEPT;
+    };
 
-    auto handle_accepted =
-      [](std::shared_ptr<GoalHandle>) {
-        // No-op for these tests
-      };
+    auto handle_accepted = [](std::shared_ptr<GoalHandle>) {
+      // No-op for these tests
+    };
 
     nav_server_ = rclcpp_action::create_server<NavigateToPose>(
-      test_node_,
-      "navigate_to_pose",
-      handle_goal,
-      handle_cancel,
-      handle_accepted);
+        test_node_, "navigate_to_pose", handle_goal, handle_cancel,
+        handle_accepted);
   }
 
   // Broadcast a simple static transform map -> base_link
-  void publish_static_tf()
-  {
+  void publish_static_tf() {
     geometry_msgs::msg::TransformStamped t;
     t.header.stamp = test_node_->now();
     t.header.frame_id = "map";
@@ -330,16 +300,14 @@ public:
   }
 
   // Create a map publisher on the given topic (or reuse if already created)
-  void ensure_map_publisher(const std::string & map_topic)
-  {
+  void ensure_map_publisher(const std::string &map_topic) {
     if (!map_pub_) {
       map_pub_ = test_node_->create_publisher<OccupancyGrid>(map_topic, 1);
     }
   }
 
   // Publish a very simple map once
-  void publish_simple_map()
-  {
+  void publish_simple_map() {
     if (!map_pub_) {
       // Default to /map if nothing was configured yet
       map_pub_ = test_node_->create_publisher<OccupancyGrid>("/map", 1);
@@ -360,9 +328,8 @@ public:
   }
 
   // Spin the executor for a duration with small sleeps
-  void spin_for(rclcpp::executors::SingleThreadedExecutor & exec,
-                std::chrono::nanoseconds duration)
-  {
+  void spin_for(rclcpp::executors::SingleThreadedExecutor &exec,
+                std::chrono::nanoseconds duration) {
     auto start = std::chrono::steady_clock::now();
     while ((std::chrono::steady_clock::now() - start) < duration) {
       exec.spin_some();
@@ -378,14 +345,13 @@ public:
   rclcpp::Publisher<OccupancyGrid>::SharedPtr map_pub_;
 
   bool got_goal_{false};
-  int  goal_count_{0};
+  int goal_count_{0};
   NavigateToPose::Goal::_pose_type last_goal_pose_;
 };
 
 TEST_CASE_METHOD(MarsExplorationNavFixture,
                  "manual goal is sent even without TF",
-                 "[integration][nav2][manual_goal]")
-{
+                 "[integration][nav2][manual_goal]") {
   auto mars_node = std::make_shared<MarsExplorationNode>();
 
   std::string goal_topic = "/goal_pose";
@@ -405,8 +371,7 @@ TEST_CASE_METHOD(MarsExplorationNavFixture,
   publish_simple_map();
   spin_for(exec, 500ms);
 
-  auto goal_pub =
-    test_node_->create_publisher<PoseStamped>(goal_topic, 10);
+  auto goal_pub = test_node_->create_publisher<PoseStamped>(goal_topic, 10);
 
   PoseStamped goal_msg;
   goal_msg.header.frame_id = "map";
@@ -423,8 +388,7 @@ TEST_CASE_METHOD(MarsExplorationNavFixture,
 
 TEST_CASE_METHOD(MarsExplorationNavFixture,
                  "with TF and map, NavigateToPose goal is sent",
-                 "[integration][tf][map][nav2]")
-{
+                 "[integration][tf][map][nav2]") {
   auto mars_node = std::make_shared<MarsExplorationNode>();
 
   std::string goal_topic = "/goal_pose";
@@ -450,8 +414,7 @@ TEST_CASE_METHOD(MarsExplorationNavFixture,
   spin_for(exec, 500ms);
 
   // Goal publisher
-  auto goal_pub =
-    test_node_->create_publisher<PoseStamped>(goal_topic, 10);
+  auto goal_pub = test_node_->create_publisher<PoseStamped>(goal_topic, 10);
 
   PoseStamped goal_msg;
   goal_msg.header.frame_id = "map";
@@ -470,14 +433,14 @@ TEST_CASE_METHOD(MarsExplorationNavFixture,
   CHECK(last_goal_pose_.header.frame_id == "map");
 }
 
-TEST_CASE_METHOD(MarsExplorationNavFixture,
-                 "max_goal_duration_sec does not re-send manual goals automatically",
-                 "[integration][timing][nav2]")
-{
+TEST_CASE_METHOD(
+    MarsExplorationNavFixture,
+    "max_goal_duration_sec does not re-send manual goals automatically",
+    "[integration][timing][nav2]") {
   // Configure a small max_goal_duration_sec so the test runs quickly.
   rclcpp::NodeOptions opts;
   opts.parameter_overrides({
-    rclcpp::Parameter("max_goal_duration_sec", 1.0),
+      rclcpp::Parameter("max_goal_duration_sec", 1.0),
   });
 
   auto mars_node = std::make_shared<MarsExplorationNode>(opts);
@@ -501,8 +464,7 @@ TEST_CASE_METHOD(MarsExplorationNavFixture,
   publish_simple_map();
   spin_for(exec, 500ms);
 
-  auto goal_pub =
-    test_node_->create_publisher<PoseStamped>(goal_topic, 10);
+  auto goal_pub = test_node_->create_publisher<PoseStamped>(goal_topic, 10);
 
   PoseStamped goal_msg;
   goal_msg.header.frame_id = "map";

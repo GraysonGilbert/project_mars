@@ -1,24 +1,46 @@
-// mars_exploration.cpp
-
+/**
+ * @file mars_exploration.cpp
+ * @author Marcus Hurt (mhurt@umd.edu)
+ * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @copyright MIT License
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #include "mars_exploration/mars_exploration.hpp"
-#include <limits>
-#include <cmath>
-#include <algorithm>   // for std::max, std::min
 
-bool MarsExploration::setNearestUnmappedCellAsGoal()
-{
+#include <algorithm>
+#include <cmath>
+#include <limits>
+
+bool MarsExploration::setNearestUnmappedCellAsGoal() {
   if (!have_map_ || !have_pose_) {
     have_goal_ = false;
     return false;
   }
 
-  const auto & info  = map_.info;
-  const auto & data  = map_.data;
-  const int width    = static_cast<int>(info.width);
-  const int height   = static_cast<int>(info.height);
-  const double res   = info.resolution;
-  const double ox    = info.origin.position.x;
-  const double oy    = info.origin.position.y;
+  const auto &info = map_.info;
+  const auto &data = map_.data;
+  const int width = static_cast<int>(info.width);
+  const int height = static_cast<int>(info.height);
+  const double res = info.resolution;
+  const double ox = info.origin.position.x;
+  const double oy = info.origin.position.y;
 
   const double min_dist2 = min_frontier_distance_m_ * min_frontier_distance_m_;
 
@@ -27,21 +49,22 @@ bool MarsExploration::setNearestUnmappedCellAsGoal()
   Pose2D best_goal;
   bool found = false;
 
-  auto cell_is_valid_frontier =
-    [&](int x, int y, double &wx, double &wy, double &dist2) -> bool
-  {
+  auto cell_is_valid_frontier = [&](int x, int y, double &wx, double &wy,
+                                    double &dist2) -> bool {
     const int idx = y * width + x;
     const int occ = data[idx];
 
-    // --- 1) Decide if this cell is "explorable" (unknown or low-confidence) ---
+    // --- 1) Decide if this cell is "explorable" (unknown or low-confidence)
+    // ---
     bool explorable = false;
 
     if (occ == -1) {
       // Classic unknown cell
       explorable = true;
     } else if (include_low_confidence_cells_) {
-      // OccupancyGrid convention: 0 = definitely free, 100 = definitely occupied, 1..99 = prob.
-      // Treat 1..low_confidence_value_ as low-confidence / "unknown-ish" space.
+      // OccupancyGrid convention: 0 = definitely free, 100 = definitely
+      // occupied, 1..99 = prob Treat 1..low_confidence_value_ as low-confidence
+      // / "unknown-ish" space.
       if (occ > 0 && occ <= low_confidence_value_) {
         explorable = true;
       }
@@ -67,14 +90,22 @@ bool MarsExploration::setNearestUnmappedCellAsGoal()
     // --- 4) Require adjacency to a known FREE cell (frontier behavior) ---
     bool adjacent_to_free = false;
     for (int ny = std::max(0, y - 1); ny <= std::min(height - 1, y + 1); ++ny) {
-      for (int nx = std::max(0, x - 1); nx <= std::min(width - 1, x + 1); ++nx) {
+      for (int nx = std::max(0, x - 1); nx <= std::min(width - 1, x + 1);
+           ++nx) {
         if (nx == x && ny == y) {
           continue;
         }
         const int nidx = ny * width + nx;
-        if (data[nidx] == 0) { // definitely free
-          adjacent_to_free = true;
-          break;
+        if (include_low_confidence_cells_) {
+          if (data[nidx] < low_confidence_value_) {
+            adjacent_to_free = true;
+            break;
+          }
+        } else {
+          if (data[nidx] == 0) {  // definitely free
+            adjacent_to_free = true;
+            break;
+          }
         }
       }
       if (adjacent_to_free) {
