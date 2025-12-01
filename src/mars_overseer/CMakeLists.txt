@@ -89,26 +89,23 @@ doxygen_add_docs(docs           # target name
   ${PROJECT_SOURCE_DIR}/include
   ${PROJECT_SOURCE_DIR}/test)
 
-# add_executable(overseer_node src/overseer_node.cpp)
-# target_include_directories(overseer_node PUBLIC
-#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-#   $<INSTALL_INTERFACE:include>)
-# ament_target_dependencies(overseer_node
-#   rclcpp
-#   nav_msgs
-#   geometry_msgs
-#   std_msgs
-#   tf2
-#   tf2_ros)
-#
-# install(TARGETS overseer_node
-#   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
 
-   ament_add_gtest(test_build_passes
-    test/test_build_passes.cpp
+   ament_add_gtest(overseer_unit_tests
+    test/overseer_unit_tests.cpp
+  )
+
+  ament_target_dependencies(overseer_unit_tests
+  rclcpp std_msgs nav_msgs)
+
+  # Link any dependencies your tests need:
+  target_link_libraries(overseer_unit_tests
+    
+    gtest
+    overseer_lib
+    #${PROJECT_NAME}
   )
 
   add_executable(overseer_integration_tests
