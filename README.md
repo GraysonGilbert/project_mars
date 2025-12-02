@@ -1,154 +1,230 @@
-# ENPM700-final-project-boilerplate
+# **Project MARS – Multi-Agent Robotic SLAM**
 
-DRAFT - DRAFT - DRAFT
+**ENPM700 Final Project – University of Maryland**
 
-![CICD Workflow status](https://github.com/TommyChangUMD/ENPM700-final-project-boilerplate/actions/workflows/run-unit-test-and-upload-codecov.yml/badge.svg) [![codecov](https://codecov.io/gh/TommyChangUMD/ENPM700-final-project-boilerplate/branch/main/graph/badge.svg)](https://codecov.io/gh/TommyChangUMD/ENPM700-final-project-boilerplate) [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![CICD Workflow Status](https://github.com/GraysonGilbert/project_mars/actions/workflows/run-unit-test-and-upload-codecov.yml/badge.svg)
+[![codecov](https://codecov.io/gh/GraysonGilbert/project_mars/branch/main/graph/badge.svg?token=YOURTOKEN)](https://codecov.io/gh/GraysonGilbert/project_mars)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-This repo provides a template for setting up:
+**Team Members:**
 
-  - GitHub CI
-    - `main` branch runs in a ROS 2 Humble container
-  - Codecov badges
-  - Colcon workspace structure
-  - C++ library, `my_model`, that depends on other system libraries such as OpenCV and rclcpp.
-    - The library is *self-contained*
-    - In real life, we download source code of third-party modules and often put the modules as-is into our colcon workspace.  Of course, we make sure the licenses are all compatible.
-  - ROS 2 package, `my_controller`, depends on a C++ library, `my_model`, which is placed into the same colcon workspace.
-  - Establishing package dependency within the colcon workspace.
-    - ie. the ROS 2 package, `my_controller`, will not be built before all of its dependent C++ libraries, such as `my_model`, are built first.
-  - Multiple subscriptions within a ROS2 node all listening to the same topic.
-    - Only one callback function is needed.
-    - More efficient than to have N callback functions.
-    - More efficient than to have N ROS nodes.
-  - ROS2 C++ unit test and integration test.
-  - Doxygen setup
-  - ROS2 launch file
-  - Bash scripts that can be invoked by the `ros2 run ...` command
+* Marcus Hurt
+* Grayson Gilbert
 
-This software uses the **Model-View-Controller** architecture.
-  - **Model** = `my_model` module (see [src/my_model/README.md](src/my_model/README.md))
-  - **Controler** = `my_controller` module  (see [src/my_controller/README.md](src/my_controller/README.md))
-  - **View** = Gazebo / Webots
+**Project Code Name:** *Project MARS* (Multi-Agent Robotic SLAM)
 
-## How to generate module / package dependency graph
+---
 
-``` bash
-colcon graph --dot | dot -Tpng -o depGraph.png
-open depGraph.png
-```
-[<img src=screenshots/depGraph.png
-    width="20%"
-    style="display: block; margin: 0 auto"
-    />](screenshots/depGraph.png)
+## **Overview**
 
+Project MARS is a scalable multi-robot mapping and exploration system that uses **ROS 2 Humble**, **Webots**, and **slam_toolbox** to generate a unified global map of a large indoor environment.
 
+The system simulates **10 TurtleBot3 Waffle robots**, each performing SLAM inside its own ROS namespace. A central **Overseer Node** fuses each robot’s `map` topic into a single `/global_map`, enabling rapid, facility-scale mapping and digital-twin generation.
 
-## How to build and run demo
+This repository contains all code, documentation, test pipelines, and CI systems required for the ENPM700 Final Project.
 
-First, make sure we install the catch2 ROS2 package.
-```bash
-$ source /opt/ros/humble/setup.bash  # if needed
-$ sudo apt install ros-${ROS_DISTRO}-catch-ros2
-```
-Now, we can build our system:
-```bash
-rm -rf build/ install/ ~/.cmake/packages/my_model/
-VERBOSE=1 colcon build --event-handlers console_cohesion+
+---
+
+## **Repository Layout**
+
+The repository follows the colcon workspace pattern:
 
 ```
-And finally, run the demo:
+project_mars/
+├── src/
+│   ├── mars_overseer/         # Map fusion and global SLAM node
+│   ├── mars_fleet_bringup/    # Launch files, configuration, multi-robot simulation
+│   ├── mars_exploration/      # Sector-based and frontier-based exploration
+│   ├── my_controller/         # (From boilerplate) Example controller / pattern
+│   └── my_model/              # (From boilerplate) Example model library
+├── .github/                   # CI, test, docs build configurations
+├── docs/                      # (Will contain UML + documentation)
+├── README.md                  # This file
+└── this-is-a-colcon-workspace
+```
+
+This structure is designed to be compatible with GitHub Actions, CodeCov, and documentation generation, per the course requirements.
+
+---
+
+## **System Architecture**
+
+### **1. Per-Robot SLAM Stack**
+
+Each TurtleBot runs:
+
+* `/robot_i/scan` (LiDAR)
+* `/robot_i/odom`
+* `/robot_i/map` (via slam_toolbox)
+* REP-105 compliant TF tree
+* Independent namespace (`/robot_1`, `/robot_2`, …)
+
+### **2. Overseer Node (`mars_overseer`)**
+
+Responsible for:
+
+* Subscribing to all `/robot_i/map` topics
+* Applying known initial transforms
+* Deterministic occupancy-grid fusion
+* Publishing a unified `/global_map`
+
+### **3. Exploration (`mars_exploration`)**
+
+Implements:
+
+* Sector-based waypoint exploration (MVP)
+* Optional frontier exploration (stretch goal)
+
+### **4. Bringup (`mars_fleet_bringup`)**
+
+Manages:
+
+* Multi-robot Webots simulation
+* slam_toolbox bringup for each robot
+* RViz2 visualization
+* Launch files and parameters
+
+---
+
+## **Build Instructions**
+
+Make sure ROS 2 Humble is sourced:
 
 ```bash
+source /opt/ros/humble/setup.bash
+```
+
+Then build the workspace:
+
+```bash
+colcon build
 source install/setup.bash
-ros2 launch my_controller run_demo.launch.yaml
-```
-example output:
-
-```
-[INFO] [launch]: All log files can be found below /home/tchang/.ros/log/2024-11-14-01-15-43-657639-tchang-IdeaPad-3-17ABA7-2012192
-[INFO] [launch]: Default logging verbosity is set to INFO
-[INFO] [talker-1]: process started with pid [2012193]
-[INFO] [listener-2]: process started with pid [2012195]
-[listener-2] Calling OpenCV function
-[listener-2] [INFO] [1731564943.913295525] [my_model]: Calling ROS function
-[talker-1] Calling OpenCV function
-[talker-1] [INFO] [1731564944.413417817] [my_model]: Calling ROS function
-[talker-1] [INFO] [1731564944.413485842] [talker]: Publishing: 101 Hello, world! 0
-[listener-2] [INFO] [1731564944.413881423] [listener]: subName=subscription0, I heard : 'Hello, world! 0'
-[listener-2] [INFO] [1731564944.413998198] [listener]: subName=subscription1, I heard : 'Hello, world! 0'
-[listener-2] [INFO] [1731564944.414027042] [listener]: subName=subscription2, I heard : 'Hello, world! 0'
-[listener-2] [INFO] [1731564944.414057074] [listener]: subName=subscription3, I heard : 'Hello, world! 0'
-[listener-2] [INFO] [1731564944.414086617] [listener]: subName=subscription4, I heard : 'Hello, world! 0'
-[talker-1] Calling OpenCV function
-[talker-1] [INFO] [1731564944.911201194] [my_model]: Calling ROS function
-[talker-1] [INFO] [1731564944.911250432] [talker]: Publishing: 102 Hello, world! 1
-[listener-2] [INFO] [1731564944.911475601] [listener]: subName=subscription0, I heard : 'Hello, world! 1'
-[listener-2] [INFO] [1731564944.911539017] [listener]: subName=subscription2, I heard : 'Hello, world! 1'
-[listener-2] [INFO] [1731564944.911562413] [listener]: subName=subscription3, I heard : 'Hello, world! 1'
-[listener-2] [INFO] [1731564944.911591467] [listener]: subName=subscription4, I heard : 'Hello, world! 1'
-[listener-2] [INFO] [1731564944.911633512] [listener]: subName=subscription1, I heard : 'Hello, world! 1'
-[talker-1] Calling OpenCV function
-[talker-1] [INFO] [1731564945.411270616] [my_model]: Calling ROS function
-[talker-1] [INFO] [1731564945.411329702] [talker]: Publishing: 103 Hello, world! 2
-
 ```
 
-## How to build tests (unit test and integration test)
-We want to run tests with code coverage.  Therefore, we need to enable the code coverage option.
+Optionally you can build individual packages in this workspace:
 
 ```bash
-rm -rf build/ install/ ~/.cmake/packages/my_model/
-VERBOSE=1 colcon build --event-handlers console_cohesion+ --cmake-args -DCOVERAGE=1
-```
-
-## How to run tests (unit and integration)
-
-```bash
+# Build only the mars_exploration package
+colcon build --packages-select mars_exploration
 source install/setup.bash
-colcon test
+
+# Build only the mars_overseer package
+colcon build --packages-select mars_overseer
+source install/setup.bash
 ```
 
-## How to generate coverage reports after running colcon test
+---
 
-First make sure we have run the unit test already.
+## **Running the System**
+
+*(Sprint 2 - placeholder for now)*
+
+Expected final commands:
+
+```bash
+# Launch Webots multi-robot world
+ros2 launch mars_fleet_bringup multi_robot_webots.launch.py
+
+# Visualize fused map
+ros2 launch mars_fleet_bringup rviz_global_map.launch.py
+```
+
+Optionallly you can run individual packages in this workspace:
+
+```bash
+# Run the mars_exploration single robot SLAM demo
+ros2 launch mars_exploration single_robot.launch.py
+
+# Run the mars_overseer node
+ros2 run mars_overseer overseer_node --ros-args -p use_sim_time:=true
+```
+
+---
+
+## **Testing**
+
+Project MARS uses **TDD**, **GoogleTest**, and **GitHub CI**.
+
+Run tests locally:
 
 ```bash
 colcon test
+colcon test-result --verbose
 ```
 
-### Coverage report for `my_controller`:
+Optionally run tests for individual packages in this workspace:
 
-``` bash
-ros2 run my_controller generate_coverage_report.bash
-open build/my_controller/test_coverage/index.html
+```bash
+# Run the mars_exploration tests
+colcon test --packages-select mars_exploration
+colcon test-result --verbose
+
+# Run the mars_overseer tests
+colcon test --packages-select mars_overseer
+colcon test-result --verbose
 ```
 
-### Coverage report for `my_model`:
+View coverage:
 
-``` bash
-colcon build \
-       --event-handlers console_cohesion+ \
-       --packages-select my_model \
-       --cmake-target "test_coverage" \
-       --cmake-arg -DUNIT_TEST_ALREADY_RUN=1
-open build/my_model/test_coverage/index.html
-```
-
-### Automate the previous steps and combine both coverage reports
-
-``` bash
+```bash
 ./do-tests-and-coverage.bash
 ```
 
-## How to generate project documentation
-``` bash
+CI runs:
+
+* Build & Test
+* CodeCov upload
+* Documentation generation (Doxygen)
+
+---
+
+## **Documentation**
+
+Auto-generated documentation will be placed under:
+
+```
+docs/html/index.html
+```
+
+Generate locally:
+
+```bash
 ./do-docs.bash
 ```
 
-## How to use GitHub CI to upload coverage report to Codecov
+UML diagrams will live under:
 
-There is already a `.github/workflows/run-unit-test-and-upload-codecov.yml` file provided.  But we still need to create a codecov account.
+```
+docs/uml/
+```
 
-Follow the similar instruction provided in the cpp-boilerplate-v2 repo:
+---
 
-  https://github.com/TommyChangUMD/cpp-boilerplate-v2?tab=readme-ov-file#how-to-use-github-ci-to-upload-coverage-report-to-codecov
+## **Development Approach**
+
+* **AIP (Agile Iterative Process)**
+* **Pair Programming** (driver/navigator)
+* **TDD**
+* **Continuous Integration**
+* **One week sprint cycles**
+
+All changes correspond to the proposal submitted to Acme Robotics for ENPM700.
+
+---
+
+## **Deliverables**
+
+# Phase 1
+
+1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?gid=241005242#gid=241005242)
+
+2) [Sprint 1 Notes](https://docs.google.com/document/d/1vtnkgUcWeYFP_rzQFlWj7m7FjFuriQDOsglt_6psIaA/edit?tab=t.0)
+
+---
+
+## **License**
+
+This project is licensed under the **MIT License**.
+
+Starter template from:
+[https://github.com/TommyChangUMD/ENPM700-final-project-boilerplate](https://github.com/TommyChangUMD/ENPM700-final-project-boilerplate)

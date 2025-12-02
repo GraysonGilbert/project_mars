@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>mars_exploration</name>
+  <version>0.0.0</version>
+  <description>
+    Exploration algorithms for Project MARS, including sector-based waypoint
+    navigation and optional frontier exploration.
+  </description>
+  <maintainer email="mhurt@umd.edu">Marcus Hurt</maintainer>
+  <maintainer email="ggilbert@umd.edu">Grayson Gilbert</maintainer>
+  <license>MIT</license>
+
+  <depend>rclcpp</depend>
+  <depend>geometry_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>pluginlib</depend>
+  <depend>webots_ros2_driver</depend>
+  <depend>nav2_msgs</depend>
+  <depend>nav2_bt_navigator</depend>
+  <depend>slam_toolbox</depend>
+  <depend>tf2_geometry_msgs</depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>catch_ros2</test_depend>
+  <test_depend>std_msgs</test_depend>
+  <test_depend>std_srvs</test_depend>
+  <test_depend>rclcpp_action</test_depend>
+  <test_depend>tf2_ros</test_depend>
+
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

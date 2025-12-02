@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>mars_fleet_bringup</name>
+  <version>0.0.0</version>
+  <description>
+    Bringup and launch configuration for the Project MARS multi-robot fleet.
+    Contains launch files, parameter YAMLs, and Webots integration.
+  </description>
+  <maintainer email="mhurt@umd.edu">Marcus Hurt</maintainer>
+  <maintainer email="ggilbert@umd.edu">Grayson Gilbert</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>webots_ros2</exec_depend>
+
+  <exec_depend>slam_toolbox</exec_depend>
+
+  <test_depend>ament_cmake_gtest</test_depend>
+  <test_depend>gtest</test_depend>
+  <test_depend>catch_ros2</test_depend>
+  <test_depend>rclcpp</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

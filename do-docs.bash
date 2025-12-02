@@ -39,7 +39,25 @@ colcon build \
 ##echo "open src/my_controller/docs/html/index.html"
 
 ###############################
-# 4. combine all docs
+# 4. run mars_exploration's "docs" target
+###############################
+colcon build \
+       --event-handlers console_cohesion+ \
+       --packages-select mars_exploration \
+       --cmake-target "docs"
+##echo "open src/mars_exploration/docs/html/index.html"
+
+###############################
+# 5. run mars_overseer's "docs" target
+###############################
+colcon build \
+       --event-handlers console_cohesion+ \
+       --packages-select mars_overseer \
+       --cmake-target "docs"
+##echo "open src/mars_overseer/docs/html/index.html"
+
+###############################
+# 6. combine all docs
 ###############################
 DOCS_DIR=src/docs/
 pandoc -f markdown $DOCS_DIR/index.md > $DOCS_DIR/index.html
