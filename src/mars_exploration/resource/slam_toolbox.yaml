@@ -8,7 +8,7 @@ slam_toolbox:
     scan_topic: /scan
     use_sim_time: true
 
-    max_laser_range: 3.5  # meters
+    max_laser_range: 8.0  # meters
 
     # Core behavior
     mode: mapping   # options: "mapping", "localization", "mapping_continuous"

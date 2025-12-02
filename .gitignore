@@ -3,3 +3,6 @@ install/
 log/
 **/compile_commands.json
 **/.cache/
+**/mars_exploration/docs/
+**/mars_overseer/docs/
+**/mars_fleet_bringup/docs/

@@ -32,7 +32,15 @@ execute_process(COMMAND cmake -E create_symlink
 ###################################################
 if (DOXYGEN_FOUND)
   set(DOXYGEN_OUTPUT_DIRECTORY     ${PROJECT_SOURCE_DIR}/docs)
-  # ... your other DOXYGEN_* settings unchanged ...
+  set(DOXYGEN_HAVE_DOT YES)
+  set(DOXYGEN_UML_LOOK YES)
+  set(DOXYGEN_CLASS_DIAGRAMS YES)
+  set(DOXYGEN_CALL_GRAPH YES)
+  set(DOXYGEN_CALLER_GRAPH YES)
+  set(DOXYGEN_DOT_IMAGE_FORMAT svg)
+  set(DOXYGEN_DOT_GRAPH_MAX_NODES 50)
+  set(DOXYGEN_DOT_TRANSPARENT YES)
+  set(DOXYGEN_DOT_MULTI_TARGETS YES)
 else()
   message(FATAL_ERROR "Doxygen needs to be installed to generate the doxygen documentation")
 endif()
