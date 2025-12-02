@@ -1,35 +1,3 @@
-##############################################################################
-#
-# GitGub CI workflow syntax spec:
-#    https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
-#
-# CodeCov github action setup:
-#    https://github.com/codecov/codecov-action
-#
-# CodeCov badge setup:
-#    https://docs.codecov.com/docs/status-badges
-#
-# version 1.1
-#
-# Docker method.  Use pre-build ROS 2 docker image.
-#
-# Important Note, Docker Hub has restricted the number of image pull
-# requests.
-#
-# See # https://docs.docker.com/docker-hub/download-rate-limit
-#
-# This means, if the you runs GitHub CI a lot, it will fail when you
-# run more than 100 times within 6 hours.  And then, you will have to
-# wait for a almost a day to be able to pull the docker image again.
-#
-# The alternative is to use GitHub Docker Registry or GitHub Pacakges
-# (ghcr.io) instead of Docker Hub.
-#
-# https://www.youtube.com/watch?v=U7TY_qUD8yA&ab_channel=AndrewSchmelyun
-# https://github.com/aschmelyun/github-actions-docker-phpunit
-# https://github.com/aschmelyun/github-actions-docker-compile
-##############################################################################
-
 name: Run Unit Test and Upload Coverage Report
 on:
   # Triggered whenever push to main 
@@ -64,7 +32,9 @@ jobs:
           sudo apt update
           sudo apt install -y doxygen lcov gcovr pandoc
           source /opt/ros/humble/setup.bash
-          sudo apt install -y ros-${ROS_DISTRO}-catch-ros2
+          sudo apt install -y \
+            ros-${ROS_DISTRO}-catch-ros2 \
+            ros-${ROS_DISTRO}-webots-ros2-driver
           
       # Run all unit test, integration test, and generate combined coverage report
       - name: Build, run unit test, and generate coverage report
@@ -83,4 +53,3 @@ jobs:
           verbose: true # optional (default = false)      
           disable_search: true # optional (default = false)
           plugin: none         # optional (xcode, gcov, pycoverage)
-          
