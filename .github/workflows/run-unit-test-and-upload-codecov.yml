@@ -34,7 +34,8 @@ jobs:
           source /opt/ros/humble/setup.bash
           sudo apt install -y \
             ros-${ROS_DISTRO}-catch-ros2 \
-            ros-${ROS_DISTRO}-webots-ros2-driver
+            ros-${ROS_DISTRO}-webots-ros2-driver \
+            ros-${ROS_DISTRO}-nav2-msgs
           
       # Run all unit test, integration test, and generate combined coverage report
       - name: Build, run unit test, and generate coverage report
