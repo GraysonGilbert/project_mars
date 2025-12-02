@@ -101,6 +101,14 @@ colcon build
 source install/setup.bash
 ```
 
+Optionally you can build individual packages in this workspace:
+
+```bash
+# Build only the mars_exploration package
+colcon build --packages-select mars_exploration
+source install/setup.bash
+```
+
 ---
 
 ## **Running the System**
@@ -117,6 +125,13 @@ ros2 launch mars_fleet_bringup multi_robot_webots.launch.py
 ros2 launch mars_fleet_bringup rviz_global_map.launch.py
 ```
 
+Optionallly you can run individual packages in this workspace:
+
+```bash
+# Run the mars_exploration single robot SLAM demo
+ros2 launch mars_exploration single_robot.launch.py
+```
+
 ---
 
 ## **Testing**
@@ -128,6 +143,15 @@ Run tests locally:
 ```bash
 colcon test
 colcon test-result --verbose
+```
+
+Optionally run tests for individual packages in this workspace:
+
+```bash
+# Run the mars_exploration tests
+colcon test --packages-select mars_exploration
+colcon test-result --verbose
+
 ```
 
 View coverage:
@@ -175,6 +199,16 @@ docs/uml/
 * **One week sprint cycles**
 
 All changes correspond to the proposal submitted to Acme Robotics for ENPM700.
+
+---
+
+## **Deliverables**
+
+# Phase 1
+
+1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?gid=241005242#gid=241005242)
+
+2) [Sprint 1 Notes](https://docs.google.com/document/d/1vtnkgUcWeYFP_rzQFlWj7m7FjFuriQDOsglt_6psIaA/edit?tab=t.0)
 
 ---
 

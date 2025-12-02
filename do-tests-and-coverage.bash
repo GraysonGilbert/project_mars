@@ -2,23 +2,23 @@
 #
 # A convenient script to run level 2 unit test (eg. integration test)
 #
-#    - Step 1 builds all packages (my_model and my_controller) with
+#    - Step 1 builds all packages with
 #      the debug and code coverage flag added (i.e, -DCOVERAGE=1)
 #
 #    - Step 2 and 3 are just running the colcon test.  This will
-#      trigger both the unit test and the integration test for both
-#      my_model and my_controller colcon packages. Once step 3
+#      trigger both the unit test and the integration test for
+#      colcon packages. Once step 3
 #      passes, all code coverage data (*.gcda, *.gcov) have been
 #      generated and we can proceed to generate the "tracefiles" (aka
 #      .info files) from them using lcov in step 4.
 #
-#    - In step 4.1 we generate the code coverage report for my_model
+#    - In step 4.1 we generate the code coverage report for mars_exploration
 #      by building the "test_coverage" CMake target.
 #
 #    - In step 4.2, we create the code coverage report for the
-#      my_controller by calling the "generate_coverage_report.bash"
-#      script that is part of my_controller.  (i.e., ros2 run
-#      my_controller ....).  This script simply calls lcov to convert
+#      mars_overseer by calling the "generate_coverage_report.bash"
+#      script that is part of mars_overseer.  (i.e., ros2 run
+#      mars_overseer....).  This script simply calls lcov to convert
 #      the code coverage data (*.gcda, *.gcov) to the "tracefile"
 #      file (*.info), which gets converted to html report by the
 #      genhtml program.
@@ -42,7 +42,8 @@ set -u                          # re-enable undefined variable check
 ##############################
 # 1. Build for test coverage
 ##############################
-colcon build --cmake-args -DCOVERAGE=1
+colcon build --cmake-args -DCOVERAGE=1 --packages-select \
+       mars_exploration mars_overseer
 set +u                          # stop checking undefined variable  
 source install/setup.bash
 set -u                          # re-enable undefined variable check
@@ -50,26 +51,27 @@ set -u                          # re-enable undefined variable check
 ##############################
 # 2. run all tests
 ##############################
-colcon test
+colcon test --packages-select \
+       mars_exploration mars_overseer
 
 ##############################
 # 3. get return status  (none-zero will cause the script to exit)
 ##############################
-colcon test-result --test-result-base build/my_controller
+colcon test-result
 
 ##############################
 # 4. generate individual coverage reports:
 ##############################
-## 4.1 my_model:
+## 4.1 mars_exploration:
 colcon build \
        --event-handlers console_cohesion+ \
-       --packages-select my_model \
+       --packages-select mars_exploration \
        --cmake-target "test_coverage" \
        --cmake-arg -DUNIT_TEST_ALREADY_RAN=1
-MY_MODEL_COVERAGE_INFO=./build/my_model/test_coverage.info
-## 4.2 my_controller:
-ros2 run my_controller generate_coverage_report.bash
-MY_CONTROLLER_COVERAGE_INFO=./build/my_controller/test_coverage.info
+MARS_EXPLORATION_COVERAGE_INFO=./build/mars_exploration/test_coverage.info
+## 4.2 mars_overseer:
+ros2 run mars_overseer generate_coverage_report.bash
+MARS_OVERSEER_COVERAGE_INFO=./build/mars_overseer/test_coverage.info
 
 ##############################
 # 5. Combine coverage reports
