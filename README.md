@@ -107,6 +107,10 @@ Optionally you can build individual packages in this workspace:
 # Build only the mars_exploration package
 colcon build --packages-select mars_exploration
 source install/setup.bash
+
+# Build only the mars_overseer package
+colcon build --packages-select mars_overseer
+source install/setup.bash
 ```
 
 ---
@@ -130,6 +134,9 @@ Optionallly you can run individual packages in this workspace:
 ```bash
 # Run the mars_exploration single robot SLAM demo
 ros2 launch mars_exploration single_robot.launch.py
+
+# Run the mars_overseer node
+ros2 run mars_overseer overseer_node --ros-args -p use_sim_time:=true
 ```
 
 ---
@@ -152,6 +159,9 @@ Optionally run tests for individual packages in this workspace:
 colcon test --packages-select mars_exploration
 colcon test-result --verbose
 
+# Run the mars_overseer tests
+colcon test --packages-select mars_overseer
+colcon test-result --verbose
 ```
 
 View coverage:
