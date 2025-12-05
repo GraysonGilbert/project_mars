@@ -28,9 +28,9 @@ def generate_launch_description():
     package_dir = get_package_share_directory(package_name)
 
     world_path = os.path.join(package_dir, 'worlds', 'mars_single_robot.wbt')
-    robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
-    ros2_control_params = os.path.join(package_dir, 'resource', 'ros2_control.yaml')
-    slam_params = os.path.join(package_dir, 'resource', 'slam_toolbox.yaml')
+    robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots_old.urdf')
+    ros2_control_params = os.path.join(package_dir, 'resource', 'ros2_control_params.yaml')
+    slam_params = os.path.join(package_dir, 'resource', 'slam_toolbox_params.yaml')
     nav2_map = os.path.join(package_dir, 'resource', 'mars_map.yaml')
     nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
 
@@ -76,7 +76,7 @@ def generate_launch_description():
         package='tf2_ros',
         executable='static_transform_publisher',
         output='screen',
-        arguments=['0', '0', '0', '0', '0', '0', 'base_link', 'base_footprint'],
+        arguments=['0', '0', '0', '0', '0', '0', '/base_link', '/base_footprint'],
     )
 
     use_twist_stamped = 'ROS_DISTRO' in os.environ and (
@@ -95,7 +95,7 @@ def generate_launch_description():
         ]
 
     turtlebot_driver = WebotsController(
-        robot_name='TurtleBot3Burger',
+        robot_name='robot_1',
         parameters=[
             {
                 'use_sim_time': use_sim_time,
@@ -115,6 +115,7 @@ def generate_launch_description():
     controller_manager_prefix = 'python.exe' if os.name == 'nt' else ''
 
     diffdrive_controller_spawner = Node(
+        
         package='controller_manager',
         executable='spawner',
         output='screen',
@@ -123,6 +124,7 @@ def generate_launch_description():
     )
 
     joint_state_broadcaster_spawner = Node(
+        
         package='controller_manager',
         executable='spawner',
         output='screen',
@@ -138,9 +140,10 @@ def generate_launch_description():
 
     # =========================================================================
     # Nav2 stack nodes
-    # =========================================================================
+    # ==========================================================================
     nav2_nodes = [
         Node(
+            
             package='nav2_behaviors',
             executable='behavior_server',
             name='behavior_server',
@@ -150,30 +153,36 @@ def generate_launch_description():
                         ('robot_base_frame', 'base_link')]
         ),
         Node(
+            
             package='nav2_controller',
             executable='controller_server',
             output='screen',
-            parameters=[nav2_params, {'use_sim_time': use_sim_time}],
+            parameters=[nav2_params, 
+                    {'use_sim_time': use_sim_time}],
         ),
         Node(
+            
             package='nav2_planner',
             executable='planner_server',
             output='screen',
             parameters=[nav2_params, {'use_sim_time': use_sim_time}],
         ),
         Node(
+            
             package='nav2_bt_navigator',
             executable='bt_navigator',
             output='screen',
             parameters=[nav2_params, {'use_sim_time': use_sim_time}],
         ),
         Node(
+            
             package='nav2_map_server',
             executable='map_server',
             output='screen',
             parameters=[nav2_params, {'use_sim_time': use_sim_time}, {'yaml_filename': nav2_map}],
         ),
         Node(
+            
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
             name='lifecycle_manager_navigation',
@@ -188,6 +197,7 @@ def generate_launch_description():
     #  SLAM Toolbox node
     # =========================================================================
     slam_toolbox = Node(
+        
         package='slam_toolbox',
         executable='async_slam_toolbox_node',
         name='slam_toolbox',
@@ -202,6 +212,7 @@ def generate_launch_description():
     #  Mars exploration control node
     # =========================================================================
     mars_exploration_node = Node(
+        
         package=package_name,
         executable='mars_exploration_node',
         name='mars_exploration_node',

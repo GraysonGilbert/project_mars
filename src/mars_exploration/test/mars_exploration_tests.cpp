@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration_tests.cpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @brief Unit tests for the MarsExploration core logic.
  * @copyright MIT License
  *

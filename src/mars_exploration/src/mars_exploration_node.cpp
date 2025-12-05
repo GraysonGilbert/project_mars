@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration_node.cpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @copyright MIT License
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -44,6 +44,8 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
   goal_topic_ = this->declare_parameter<std::string>("goal_topic", goal_topic_);
   cmd_vel_topic_ =
       this->declare_parameter<std::string>("cmd_vel_topic", cmd_vel_topic_);
+  map_topic_ =
+      this->declare_parameter<std::string>("map_topic", map_topic_);
   global_frame_ =
       this->declare_parameter<std::string>("global_frame", global_frame_);
   base_frame_ = this->declare_parameter<std::string>("base_frame", base_frame_);
@@ -65,7 +67,7 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
                 std::placeholders::_1));
 
   map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
-      "map", rclcpp::SystemDefaultsQoS(),
+      map_topic_, rclcpp::SystemDefaultsQoS(),
       std::bind(&MarsExplorationNode::mapCallback, this,
                 std::placeholders::_1));
 
@@ -84,6 +86,7 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
   RCLCPP_INFO(get_logger(), "MarsExplorationNode started with:");
   RCLCPP_INFO(get_logger(), "  goal_topic:     %s", goal_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  cmd_vel_topic:  %s", cmd_vel_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  map_topic:      %s", map_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  global_frame:   %s", global_frame_.c_str());
   RCLCPP_INFO(get_logger(), "  base_frame:     %s", base_frame_.c_str());
   RCLCPP_INFO(get_logger(), "  control_rate_hz: %.2f", control_rate_hz_);

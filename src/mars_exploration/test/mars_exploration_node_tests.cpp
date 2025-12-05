@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration_node_tests.cpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @brief Integration-style tests for MarsExplorationNode using catch_ros2.
  * @copyright MIT License
  *

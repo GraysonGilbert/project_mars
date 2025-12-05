@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration.hpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @brief Core logic for MARS exploration: choosing exploration goals.
  * @copyright MIT License
  *

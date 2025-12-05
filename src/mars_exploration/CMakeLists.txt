@@ -117,6 +117,22 @@ install(TARGETS mars_exploration_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
+###################################
+# Scan frame rewriter
+###################################
+add_executable(scan_frame_rewriter
+  src/scan_frame_rewriter.cpp
+)
+ament_target_dependencies(scan_frame_rewriter
+  rclcpp
+  sensor_msgs
+)
+install(
+  TARGETS
+    scan_frame_rewriter
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(catch_ros2 REQUIRED)

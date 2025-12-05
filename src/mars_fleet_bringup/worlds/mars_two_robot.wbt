@@ -58,6 +58,26 @@ TurtleBot3Burger {
     }
   ]
 }
+TurtleBot3Burger {
+  translation 6.36 1.0 0
+  controller "<extern>"
+  name "robot_2"
+  controllerArgs [
+    ""
+  ]
+  extensionSlot [
+    Solid {
+      name "imu_link"
+    }
+    GPS {
+    }
+    InertialUnit {
+      name "inertial_unit"
+    }
+    RobotisLds01 {
+    }
+  ]
+}
 PottedTree {
   translation 7 -4 0
   rotation 0 0 1 1.5708

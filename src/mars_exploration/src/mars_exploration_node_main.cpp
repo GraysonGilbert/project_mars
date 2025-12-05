@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration_node_main.cpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @copyright MIT License
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
