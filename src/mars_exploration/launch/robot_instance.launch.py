@@ -67,6 +67,18 @@ def generate_launch_description():
             ],
         )
 
+        footprint_publisher = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            output='screen',
+            namespace=robot_id,
+            arguments=[
+                '0', '0', '0',
+                '0', '0', '0',
+                f'{robot_id}/base_link',
+                f'{robot_id}/base_footprint'],
+        )
+
         # Robot state publisher, with a frame_prefix per robot
         robot_state_publisher = Node(
             namespace=robot_id,
@@ -416,6 +428,7 @@ def generate_launch_description():
             static_laser_tf,
             robot_state_publisher,
             scan_frame_rewriter,
+            footprint_publisher,
         ]
 
     return LaunchDescription([
