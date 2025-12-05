@@ -40,6 +40,9 @@ OverseerNode::OverseerNode() : Node("overseer_node")
         std::bind(&OverseerNode::publish_global_map_tf, this)
     );
 
+    // Placeholder vector for two robot simulation
+    std::vector<std::string> robot_ids = {"robot_1", "robot_2"};
+
     rclcpp::QoS map_qos(rclcpp::KeepLast(1));
     map_qos.reliable();
     map_qos.transient_local();
@@ -47,10 +50,20 @@ OverseerNode::OverseerNode() : Node("overseer_node")
     // // Publisher for global map
     map_pub_ = this->create_publisher<nav_msgs::msg::OccupancyGrid>("/global_map", map_qos);
 
-    // Subscriber to slam_toolbox map
-    map_sub_ = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
-        "/map", 10,
-        std::bind(&OverseerNode::map_callback, this, std::placeholders::_1));
+    // Subscribes to all slam_toolbox map topics being published
+    for (const auto& robot_id : robot_ids)
+    {
+        std::string topic_name = "/" + robot_id + "/map";
+        RCLCPP_INFO(this->get_logger(), "Subscribing to %s", topic_name.c_str());
+
+        // Lambda captures the robot_id by value
+        map_subs_[robot_id] = this->create_subscription<nav_msgs::msg::OccupancyGrid>(
+            topic_name, map_qos,
+            [this, robot_id](const nav_msgs::msg::OccupancyGrid::SharedPtr msg) {
+                this->map_callback(msg, robot_id);
+            }
+        );
+    }
 
     RCLCPP_INFO(this->get_logger(), "Overseer node started. Subscribing to /map and publishing to /global_map");
 
@@ -88,24 +101,39 @@ void OverseerNode::publish_global_map_tf()
     tf_broadcaster_->sendTransform(t);
 }
 
-void OverseerNode::map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
+void OverseerNode::map_callback(
+    const nav_msgs::msg::OccupancyGrid::SharedPtr msg,
+    const std::string& robot_id)
 {
-
     rclcpp::Time now = this->get_clock()->now();
 
-    // Checks for outdated maps
     if (!map_merger_.is_map_recent(*msg, now)) {
-        RCLCPP_WARN(this->get_logger(), "Received stale map, ignoring");
+        RCLCPP_WARN(this->get_logger(), "Received stale map from %s, ignoring", robot_id.c_str());
         return;
     }
 
-    map_merger_.merge_maps(global_map_, {*msg});
+    // Store robot's local map
+    local_maps_[robot_id] = *msg;
+
+    // Merge all local maps
+    map_merger_.merge_maps(global_map_, get_all_local_maps_vector());
 
     global_map_.header.stamp = now;
-
     map_pub_->publish(global_map_);
-    RCLCPP_INFO(this->get_logger(), "Map published to /global_map");
+
+    RCLCPP_INFO(this->get_logger(), "Merged map published after receiving data from %s", robot_id.c_str());
 }
+
+std::vector<nav_msgs::msg::OccupancyGrid> OverseerNode::get_all_local_maps_vector()
+{
+    std::vector<nav_msgs::msg::OccupancyGrid> maps;
+    for (auto& pair : local_maps_)
+    {
+        maps.push_back(pair.second);
+    }
+    return maps;
+}
+
 
 
 int main(int argc, char **argv)

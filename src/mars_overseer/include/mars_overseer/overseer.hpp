@@ -52,10 +52,13 @@ public:
 private:
 
     // Callback for receiving local robot occupancy grid maps
-    void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg);
+    void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg, const std::string& robot_id);
 
     // Publishes the TF transform for the global map frame
     void publish_global_map_tf();
+
+    // Helper to get vector of local maps
+    std::vector<nav_msgs::msg::OccupancyGrid> get_all_local_maps_vector();
 
     // Utility class responsible for merging multiple occupancy grids into a single global map
     MapMerger map_merger_{10.0};
@@ -76,10 +79,7 @@ private:
     rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
 
     // Subscriber for incoming local maps
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-
-    // To be implemented during phase 2, subscribe to multiple robots under different namespaces
-    //std::map<std::string, rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr> map_subs_;
+    std::map<std::string, rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr> map_subs_;
 
 };
 
