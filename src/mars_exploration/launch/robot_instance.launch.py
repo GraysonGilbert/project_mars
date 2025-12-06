@@ -2,7 +2,7 @@ import os
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, OpaqueFunction
-from launch.substitutions import LaunchConfiguration
+from launch.substitutions import LaunchConfiguration, Command
 
 from launch_ros.actions import Node
 
@@ -21,9 +21,7 @@ def generate_launch_description():
     ros2_control_params = os.path.join(package_dir, 'resource', 'ros2_control_params.yaml')
     slam_params = os.path.join(package_dir, 'resource', 'slam_toolbox_params.yaml')
 
-    # NEW: Nav2 config (reuse the same files as single-robot example)
     nav2_map = os.path.join(package_dir, 'resource', 'mars_map.yaml')
-    nav2_params = os.path.join(package_dir, 'resource', 'nav2_params.yaml')
 
     # TB3 env
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
@@ -47,6 +45,15 @@ def generate_launch_description():
         use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context)
         use_sim_time = (use_sim_time_str.lower() == 'true')
         nav2_params = os.path.join(package_dir, 'resource', f'{robot_id}_nav2_params.yaml')
+        
+        # Nav2 Config
+        nav2_config = RewrittenYaml(
+        source_file=nav2_params,
+        root_key=robot_id,
+        param_rewrites={},
+        convert_types=True
+        )
+
 
         # ---------------------------------------------------------------------
         # Static TF: from robot_i/base_link -> robot_i/LDS-01
@@ -151,7 +158,7 @@ def generate_launch_description():
             diffdrive_controller_spawner,
             joint_state_broadcaster_spawner,
         ]
-
+               
         # ---------------------------------------------------------------------
         # SLAM toolbox (namespaced, using corrected scan)
         # ---------------------------------------------------------------------
@@ -171,7 +178,11 @@ def generate_launch_description():
                 }
             ],
             remappings=[
-                ('scan', 'scan_corrected'),   # /robot_i/scan_corrected
+                # Input topic remaps correctly
+                ('scan', 'scan_corrected'),   
+                ('/map', 'map'),
+                ('/tf', '/tf'), 
+                ('/tf_static', '/tf_static'),
             ],
         )
 
@@ -185,6 +196,7 @@ def generate_launch_description():
             namespace=robot_id,
             parameters=[
                 {
+                    'use_sim_time' : True,
                     # These are relative to the namespace:
                     #   /robot_i/scan           -> input
                     #   /robot_i/scan_corrected -> output
@@ -195,100 +207,6 @@ def generate_launch_description():
             ],
         )
 
-        # ---------------------------------------------------------------------
-        # Nav2 stack (one instance per robot, namespaced)
-        # ---------------------------------------------------------------------
-        # We override frames so each robot has its own TF tree:
-        #   robot_i/map -> robot_i/odom -> robot_i/base_link
-        # and all nav2 topics live under /robot_i/...
-        # nav2_common_frame_overrides = {
-        #     'use_sim_time': use_sim_time,
-        #     'global_frame': f'{robot_id}/map',
-        #     'robot_base_frame': f'{robot_id}/base_link',
-        #     'odom_frame': f'{robot_id}/odom',
-
-        #      # controller_server local costmap
-        #     'local_costmap.global_frame': f'{robot_id}/odom',
-        #     'local_costmap.robot_base_frame': f'{robot_id}/base_link',
-
-        #     # planner_server global costmap
-        #     'global_costmap.global_frame': f'{robot_id}/map',
-        #     'global_costmap.robot_base_frame': f'{robot_id}/base_link',
-
-        #     # core controller config
-        #     'controller_frequency': 10.0,
-        #     'failure_tolerance': 0.3,
-        #     'progress_checker_plugin': 'progress_checker',
-        #     'goal_checker_plugins': ['goal_checker'],
-        #     'controller_plugins': ['FollowPath'],
-
-        #     # FollowPath (DWB) core limits
-        #     'FollowPath.plugin': 'dwb_core::DWBLocalPlanner',
-        #     'FollowPath.min_vel_x': 0.0,
-        #     'FollowPath.max_vel_x': 0.22,
-        #     'FollowPath.min_speed_xy': 0.0,
-        #     'FollowPath.max_speed_xy': 0.22,
-        #     'FollowPath.min_vel_y': 0.0,
-        #     'FollowPath.max_vel_y': 0.0,
-        #     'FollowPath.max_vel_theta': 1.0,
-        #     'FollowPath.min_speed_theta': 0.0,
-
-        #     'FollowPath.acc_lim_x': 2.5,
-        #     'FollowPath.decel_lim_x': -2.5,
-        #     'FollowPath.acc_lim_y': 0.0,
-        #     'FollowPath.decel_lim_y': 0.0,
-        #     'FollowPath.acc_lim_theta': 3.2,
-        #     'FollowPath.decel_lim_theta': -3.2,
-
-        #     'FollowPath.vx_samples': 20,
-        #     'FollowPath.vy_samples': 0,
-        #     'FollowPath.vtheta_samples': 40,
-        #     'FollowPath.sim_time': 1.5,
-        #     'FollowPath.linear_granularity': 0.05,
-        #     'FollowPath.angular_granularity': 0.025,
-        #     'FollowPath.transform_tolerance': 1.0,
-
-        #     # *** THE IMPORTANT ONE ***
-        #     'FollowPath.critics': [
-        #         'RotateToGoal',
-        #         'Oscillation',
-        #         'BaseObstacle',
-        #         'GoalAlign',
-        #         'PathAlign',
-        #         'PathDist',
-        #         'GoalDist',
-        #     ],
-
-        #     # Some critic weights (optional but nice)
-        #     'FollowPath.BaseObstacle.scale': 0.02,
-        #     'FollowPath.PathAlign.scale': 32.0,
-        #     'FollowPath.PathAlign.forward_point_distance': 0.1,
-        #     'FollowPath.GoalAlign.scale': 24.0,
-        #     'FollowPath.GoalAlign.forward_point_distance': 0.1,
-        #     'FollowPath.PathDist.scale': 32.0,
-        #     'FollowPath.GoalDist.scale': 24.0,
-        #     'FollowPath.RotateToGoal.scale': 32.0,
-        #     'FollowPath.RotateToGoal.slowing_factor': 5.0,
-        #     'FollowPath.RotateToGoal.lookahead_time': -1.0,
-        # }
-
-        # nav2_param_substitutions = {
-        #     'global_frame': f'{robot_id}/map',
-        #     'robot_base_frame': f'{robot_id}/base_link',
-        #     'odom_frame': f'{robot_id}/odom',
-        #     'local_costmap.global_frame': f'{robot_id}/odom',
-        #     'local_costmap.robot_base_frame': f'{robot_id}/base_link',
-        #     'global_costmap.global_frame': f'{robot_id}/map',
-        #     'global_costmap.robot_base_frame': f'{robot_id}/base_link',
-        # }
-
-        # configured_nav2_params = RewrittenYaml(
-        #     source_file=nav2_params,
-        #     root_key='',
-        #     param_rewrites=nav2_param_substitutions,
-        #     convert_types=True,
-        # )
-
         nav2_nodes = [
             Node(
                 package='nav2_behaviors',
@@ -297,7 +215,7 @@ def generate_launch_description():
                 namespace=robot_id,
                 output='screen',
                 parameters=[
-                    nav2_params,
+                    nav2_config,
                     {
                         'use_sim_time': use_sim_time,
                     }
@@ -311,7 +229,7 @@ def generate_launch_description():
                 namespace=robot_id,
                 output='screen',
                 parameters=[
-                    nav2_params,
+                    nav2_config,
                     {
                         'use_sim_time': use_sim_time,
                     }
@@ -324,7 +242,7 @@ def generate_launch_description():
                 namespace=robot_id,
                 output='screen',
                 parameters=[
-                    nav2_params,
+                    nav2_config,
                     {
                         'use_sim_time': use_sim_time,
                     }
@@ -337,7 +255,7 @@ def generate_launch_description():
                 namespace=robot_id,
                 output='screen',
                 parameters=[
-                    nav2_params,
+                    nav2_config,
                     {
                         'use_sim_time': use_sim_time,
                     }
@@ -350,7 +268,7 @@ def generate_launch_description():
                 namespace=robot_id,
                 output='screen',
                 parameters=[
-                    nav2_params,
+                    nav2_config,
                     {
                         'use_sim_time': use_sim_time,
                         'yaml_filename': nav2_map,
@@ -417,9 +335,10 @@ def generate_launch_description():
         waiting_nodes = WaitForControllerConnection(
             target_driver=turtlebot_driver,
             nodes_to_start=ros_control_spawners
-                           + nav2_nodes
-                           + [slam_toolbox, mars_exploration_node],
+                           + [slam_toolbox, mars_exploration_node]
+                           + nav2_nodes,
         )
+
 
         # Return the actions to add to the LaunchDescription
         return [
