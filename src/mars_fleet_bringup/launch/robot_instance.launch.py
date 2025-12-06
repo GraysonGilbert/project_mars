@@ -16,12 +16,15 @@ from nav2_common.launch import RewrittenYaml
 def generate_launch_description():
     package_name = 'mars_exploration'
     package_dir = get_package_share_directory(package_name)
+    
+    bringup_package_name = 'mars_fleet_bringup'
+    bringup_package_dir = get_package_share_directory(bringup_package_name)
 
-    robot_description_path = os.path.join(package_dir, 'resource', 'turtlebot_webots.urdf')
-    ros2_control_params = os.path.join(package_dir, 'resource', 'ros2_control_params.yaml')
-    slam_params = os.path.join(package_dir, 'resource', 'slam_toolbox_params.yaml')
+    robot_description_path = os.path.join(bringup_package_dir, 'urdf', 'turtlebot_webots.urdf')
+    ros2_control_params = os.path.join(bringup_package_dir, 'params', 'ros2_control_params.yaml')
+    slam_params = os.path.join(bringup_package_dir, 'params', 'slam_toolbox_params.yaml')
 
-    nav2_map = os.path.join(package_dir, 'resource', 'mars_map.yaml')
+    nav2_map = os.path.join(bringup_package_dir, 'map', 'mars_map.yaml')
 
     # TB3 env
     os.environ['TURTLEBOT3_MODEL'] = 'burger'
@@ -44,7 +47,7 @@ def generate_launch_description():
         robot_id = LaunchConfiguration('robot_id').perform(context)
         use_sim_time_str = LaunchConfiguration('use_sim_time').perform(context)
         use_sim_time = (use_sim_time_str.lower() == 'true')
-        nav2_params = os.path.join(package_dir, 'resource', f'{robot_id}_nav2_params.yaml')
+        nav2_params = os.path.join(bringup_package_dir, 'params', f'{robot_id}_nav2_params.yaml')
         
         # Nav2 Config
         nav2_config = RewrittenYaml(

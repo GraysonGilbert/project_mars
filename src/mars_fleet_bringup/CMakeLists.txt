@@ -71,6 +71,9 @@ install(DIRECTORY
   launch
   resource
   worlds
+  map
+  params
+  urdf
   DESTINATION share/${PROJECT_NAME}/
 )
 
