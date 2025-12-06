@@ -24,7 +24,7 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projec
 
 WorldInfo {
   info [
-    "Simple TurtleBot3 Burger simulation that can be controlled by ROS2 (two robots)."
+    "Simple TurtleBot3 Burger simulation that can be controlled by ROS2 (three robots)."
   ]
   title "ROS2 simulation of two TurtleBot3 Burger robots"
   basicTimeStep 20
