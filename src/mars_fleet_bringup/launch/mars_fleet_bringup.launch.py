@@ -131,6 +131,41 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
     ld.add_action(rviz_node)
-    
+
+    # -------------------------------------------------------
+    # Static TF: global_map -> robot_1/map
+    # anchor robot_1/map at the global origin
+    # -------------------------------------------------------
+    static_tf_robot1 = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='global_to_robot1_map',
+        output='screen',
+        arguments=[
+            '0.0', '0.0', '0.0',      # x y z
+            '0.0', '0.0', '0.0',      # roll pitch yaw
+            'global_map',             # parent
+            'robot_1/map',            # child
+        ],
+    )
+    ld.add_action(static_tf_robot1)
+
+    # -------------------------------------------------------
+    # Static TF: global_map -> robot_2/map
+    # offset of +6.0 m in Y from world file
+    # -------------------------------------------------------
+    static_tf_robot2 = Node(
+        package='tf2_ros',
+        executable='static_transform_publisher',
+        name='global_to_robot2_map',
+        output='screen',
+        arguments=[
+            '-0.5', '8.5', '0.0',      # x y z
+            '0.0', '0.0', '0.0',      # roll pitch yaw
+            'global_map',             # parent
+            'robot_2/map',            # child
+        ],
+    )
+    ld.add_action(static_tf_robot2)
 
     return ld

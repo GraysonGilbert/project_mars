@@ -69,7 +69,6 @@ doxygen_add_docs(docs           # target name
 
 install(DIRECTORY
   launch
-  resource
   worlds
   map
   params

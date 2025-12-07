@@ -186,7 +186,6 @@ install(
 )
 install(DIRECTORY
   launch
-  resource
   DESTINATION share/${PROJECT_NAME}/
 )
 
