@@ -33,6 +33,8 @@ OverseerNode::OverseerNode() : Node("overseer_node")
 {
     // Create TF broadcaster
     tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
+    tf_buffer_   = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+    tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
     // Publish transform at 10 Hz
     tf_timer_ = this->create_wall_timer(
@@ -112,10 +114,55 @@ void OverseerNode::map_callback(
         return;
     }
 
-    // Store robot's local map
-    local_maps_[robot_id] = *msg;
+    // ---------------------------------------------------------------------
+    // 1) Look up transform from local map frame -> global_map
+    // ---------------------------------------------------------------------
+    const std::string target_frame = "global_map";
+    const std::string source_frame = msg->header.frame_id;  // e.g. "robot_1/map"
 
-    // Merge all local maps
+    geometry_msgs::msg::TransformStamped T_global_local;
+
+    try {
+        // small timeout to avoid blocking forever if TF is missing
+        T_global_local = tf_buffer_->lookupTransform(
+            target_frame,
+            source_frame,
+            msg->header.stamp,
+            tf2::durationFromSec(0.1));
+    }
+    catch (const tf2::TransformException &ex) {
+        RCLCPP_WARN(this->get_logger(),
+                    "Overseer: TF lookup failed (%s -> %s) for robot %s: %s",
+                    target_frame.c_str(), source_frame.c_str(),
+                    robot_id.c_str(), ex.what());
+        return;
+    }
+
+    // ---------------------------------------------------------------------
+    // 2) Transform the map origin pose into global_map frame
+    // ---------------------------------------------------------------------
+    geometry_msgs::msg::PoseStamped origin_local;
+    geometry_msgs::msg::PoseStamped origin_global;
+
+    origin_local.header.frame_id = source_frame;
+    origin_local.header.stamp    = msg->header.stamp;
+    origin_local.pose            = msg->info.origin;  // origin in local map frame
+
+    tf2::doTransform(origin_local, origin_global, T_global_local);
+
+    // ---------------------------------------------------------------------
+    // 3) Create a copy of the map with origin expressed in global_map frame
+    // ---------------------------------------------------------------------
+    nav_msgs::msg::OccupancyGrid transformed = *msg;
+    transformed.header.frame_id = target_frame;
+    transformed.info.origin     = origin_global.pose;
+
+    // Store robot's local map in *global* coordinates
+    local_maps_[robot_id] = transformed;
+
+    // ---------------------------------------------------------------------
+    // 4) Merge all local maps
+    // ---------------------------------------------------------------------
     map_merger_.merge_maps(global_map_, get_all_local_maps_vector());
 
     global_map_.header.stamp = now;

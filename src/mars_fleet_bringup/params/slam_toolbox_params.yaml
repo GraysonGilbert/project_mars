@@ -9,8 +9,8 @@ robot_1:
       scan_topic: scan
       use_sim_time: true
       
-      provide_odom_frame: true
-      publish_tf: true
+      provide_odom_frame: false
+      publish_tf: false
 
       max_laser_range: 8.0  # meters
 
@@ -38,8 +38,8 @@ robot_2:
       scan_topic: scan
       use_sim_time: true
 
-      provide_odom_frame: true
-      publish_tf: true
+      provide_odom_frame: false
+      publish_tf: false
 
       max_laser_range: 8.0
 

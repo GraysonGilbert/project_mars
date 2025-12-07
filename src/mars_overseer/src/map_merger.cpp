@@ -66,58 +66,114 @@ bool MapMerger::is_map_recent(const nav_msgs::msg::OccupancyGrid& map, const rcl
 }
 
 
-void MapMerger::merge_maps(nav_msgs::msg::OccupancyGrid& global_map, const std::vector<nav_msgs::msg::OccupancyGrid>& local_maps) const{
-    
+void MapMerger::merge_maps(
+    nav_msgs::msg::OccupancyGrid& global_map,
+    const std::vector<nav_msgs::msg::OccupancyGrid>& local_maps) const
+{
+    if (local_maps.empty()) {
+        return;
+    }
+
     const double EPS = 1e-4;  // tolerance for resolution comparison
 
-    // Iterate through each local map and overlay it onto the global map
+    // All local maps should match the global resolution
     for (const auto& local : local_maps) {
-        
         if (std::abs(global_map.info.resolution - local.info.resolution) > EPS) {
             throw std::runtime_error("Occupancy grid resolutions do not match.");
         }
-
-        overlay_map(global_map, local);
     }
-} 
 
-void MapMerger::overlay_map(nav_msgs::msg::OccupancyGrid& global, const nav_msgs::msg::OccupancyGrid& local) const {
+    // Find newest stamp among local maps for relative recency
+    rclcpp::Time newest_stamp = local_maps.front().header.stamp;
+    for (const auto& local : local_maps) {
+        rclcpp::Time local_stamp(local.header.stamp);
+        if (local_stamp > newest_stamp) {
+            newest_stamp = local_stamp;
+        }
+    }
 
+    // Characteristic time scale for recency decay
+    const double tau = std::max(1e-3, max_map_age_sec_);  // avoid division by zero
+
+    // Blend each local map into the global, weighting more recent ones higher
+    for (const auto& local : local_maps) {
+        // Age relative to newest map
+        double age_sec = (newest_stamp - local.header.stamp).seconds();
+
+        // Recency weight in [0, 1], 1 for newest, decays for older maps
+        double recency = std::exp(-age_sec / tau);
+        recency = std::clamp(recency, 0.0, 1.0);
+
+        // Map recency -> blend factor alpha
+        //   oldest (recency ~ 0) -> alpha ~ 0.2  (more history)
+        //   newest (recency ~ 1) -> alpha ~ 0.8  (strong recent preference)
+        double alpha = 0.2 + 0.6 * recency;
+
+        overlay_map(global_map, local, alpha);
+    }
+}
+
+void MapMerger::overlay_map(
+    nav_msgs::msg::OccupancyGrid& global,
+    const nav_msgs::msg::OccupancyGrid& local,
+    double alpha) const
+{
     // Shared resolution assumption
-    double resolution = global.info.resolution;
+    const double resolution   = global.info.resolution;
+    const auto   global_width = global.info.width;
+    const auto   global_height= global.info.height;
 
-    int global_width = global.info.width;
-    int global_height = global.info.height;
+    // Origins (bottom-left corner in world coordinates)
+    const double gx0 = global.info.origin.position.x;
+    const double gy0 = global.info.origin.position.y;
 
-    // Global map origin
-    double gx0 = global.info.origin.position.x;
-    double gy0 = global.info.origin.position.y;
-
-    // Local map origin
-    double lx0 = local.info.origin.position.x;
-    double ly0 = local.info.origin.position.y;
+    const double lx0 = local.info.origin.position.x;
+    const double ly0 = local.info.origin.position.y;
 
     // Loop through the local map cells
     for (uint32_t y = 0; y < local.info.height; ++y) {
         for (uint32_t x = 0; x < local.info.width; ++x) {
-            int local_idx = y * local.info.width + x;
-            int8_t value = local.data[local_idx];
+            const int local_idx = static_cast<int>(y * local.info.width + x);
+            const int8_t local_val = local.data[local_idx];
 
-            // Skip unknown values
-            if (value < 0) continue; 
+            // Skip unknowns in the local map
+            if (local_val < 0) {
+                continue;
+            }
 
             // Convert local cell position to world coordinates, then to global map indices
-            int gx = static_cast<int>(std::round((lx0 + x * resolution - gx0) / resolution));
-            int gy = static_cast<int>(std::round((ly0 + y * resolution - gy0) / resolution));
+            const double wx = lx0 + static_cast<double>(x) * resolution;
+            const double wy = ly0 + static_cast<double>(y) * resolution;
+
+            const int gx = static_cast<int>(std::round((wx - gx0) / resolution));
+            const int gy = static_cast<int>(std::round((wy - gy0) / resolution));
 
             // Ensure the cell lies inside global bounds
-            if (gx < 0 || gy < 0 || gx >= static_cast<int>(global_width) || gy >= static_cast<int>(global_height))
+            if (gx < 0 || gy < 0 ||
+                gx >= static_cast<int>(global_width) ||
+                gy >= static_cast<int>(global_height)) {
                 continue; 
+            }
 
-            int global_idx = gy * global_width + gx;
+            const int global_idx = gy * static_cast<int>(global_width) + gx;
+            int8_t& global_val = global.data[global_idx];
 
-            // Overwrite or take max occupancy
-            global.data[global_idx] = std::max(global.data[global_idx], value);
+            // If the global cell is unknown, just take the local value.
+            if (global_val < 0) {
+                global_val = local_val;
+                continue;
+            }
+
+            // Convert to probabilities in [0, 1]
+            const double p_global = static_cast<double>(global_val) / 100.0;
+            const double p_local  = static_cast<double>(local_val)  / 100.0;
+
+            // Blend: newer map (larger alpha) pulls harder toward p_local
+            double p_new = (1.0 - alpha) * p_global + alpha * p_local;
+
+            // Clamp and store back as int8 [0, 100]
+            p_new = std::clamp(p_new, 0.0, 1.0);
+            global_val = static_cast<int8_t>(std::round(100.0 * p_new));
         }
     }
 }

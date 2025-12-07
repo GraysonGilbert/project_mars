@@ -83,8 +83,11 @@ class MapMerger {
                                                    
     private:
 
-        // Overlay a local occupancy grid on the global map
-        void overlay_map(nav_msgs::msg::OccupancyGrid& global, const nav_msgs::msg::OccupancyGrid& local) const;
+        // Overlay a local occupancy grid on the global map with blending factor alpha
+        void overlay_map(
+            nav_msgs::msg::OccupancyGrid& global,
+            const nav_msgs::msg::OccupancyGrid& local,
+            double alpha) const;
 
         // Maximum allowed map age used in map recency checks
         double max_map_age_sec_;

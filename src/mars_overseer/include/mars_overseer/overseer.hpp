@@ -37,6 +37,11 @@
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_listener.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "geometry_msgs/msg/pose_stamped.hpp"
+
 class OverseerNode : public rclcpp::Node
 {
 public:
@@ -65,6 +70,8 @@ private:
 
     // TF Broadcaster used to publish global map transform
     std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
     // Timer that periodically publishes TF transforms
     rclcpp::TimerBase::SharedPtr tf_timer_;
