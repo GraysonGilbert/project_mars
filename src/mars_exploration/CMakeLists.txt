@@ -187,7 +187,6 @@ install(
 install(DIRECTORY
   launch
   resource
-  worlds
   DESTINATION share/${PROJECT_NAME}/
 )
 
