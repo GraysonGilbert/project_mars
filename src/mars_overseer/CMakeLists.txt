@@ -141,7 +141,7 @@ if(BUILD_TESTING)
   # This CMake function allows the integration test to be run
   # when running "colcon test".
   catch_ros2_add_integration_test (integration_test
-    LAUNCH_FILE integration_tests.launch.yaml
+    LAUNCH_FILE integration_tests.launch.py
 
     )
 
