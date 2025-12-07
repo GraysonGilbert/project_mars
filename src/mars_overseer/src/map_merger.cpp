@@ -67,9 +67,16 @@ bool MapMerger::is_map_recent(const nav_msgs::msg::OccupancyGrid& map, const rcl
 
 
 void MapMerger::merge_maps(nav_msgs::msg::OccupancyGrid& global_map, const std::vector<nav_msgs::msg::OccupancyGrid>& local_maps) const{
+    
+    const double EPS = 1e-4;  // tolerance for resolution comparison
 
     // Iterate through each local map and overlay it onto the global map
     for (const auto& local : local_maps) {
+        
+        if (std::abs(global_map.info.resolution - local.info.resolution) > EPS) {
+            throw std::runtime_error("Occupancy grid resolutions do not match.");
+        }
+
         overlay_map(global_map, local);
     }
 } 
