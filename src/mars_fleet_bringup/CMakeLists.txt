@@ -74,6 +74,7 @@ install(DIRECTORY
   map
   params
   urdf
+  config
   DESTINATION share/${PROJECT_NAME}/
 )
 

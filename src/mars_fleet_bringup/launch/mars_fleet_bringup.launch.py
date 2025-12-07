@@ -8,6 +8,7 @@ from launch.conditions import IfCondition
 from launch.event_handlers import OnProcessExit
 from ament_index_python.packages import get_package_share_directory
 from webots_ros2_driver.webots_launcher import WebotsLauncher
+from launch_ros.actions import Node
 
 
 def launch_robots(context: LaunchContext, *args, **kwargs):
@@ -29,7 +30,7 @@ def launch_robots(context: LaunchContext, *args, **kwargs):
         )
     return actions
 
-# instantiate WebotsLauncher and its supervisor, and return those actions + shutdown handler.
+# Instantiate WebotsLauncher and its supervisor, and return those actions + shutdown handler.
 def build_and_launch_webots(context: LaunchContext, *args, **kwargs):
     fleet_package = kwargs.get('fleet_package')
 
@@ -52,6 +53,7 @@ def build_and_launch_webots(context: LaunchContext, *args, **kwargs):
 
 def generate_launch_description():
     fleet_package = 'mars_fleet_bringup'
+    fleet_package_dir = get_package_share_directory(fleet_package)
     robot_launch_file = os.path.join(
         get_package_share_directory(fleet_package),
         'launch',
@@ -93,5 +95,36 @@ def generate_launch_description():
         condition=IfCondition(record_rosbag),
     )
     ld.add_action(rosbag_recorder)
+    
+    
+    # -------------------------------------------------------
+    # Overseer Node (mars_overseer)
+    # -------------------------------------------------------
+    #overseer_pkg_dir = get_package_share_directory('mars_overseer')
+
+    overseer_node = Node(
+        package='mars_overseer',
+        executable='overseer_node',
+        name='overseer',
+        output='screen',
+        parameters=[{'use_sim_time': True}],
+    )
+    ld.add_action(overseer_node)
+
+    # -------------------------------------------------------
+    # RViz2 Launch
+    # -------------------------------------------------------
+    rviz_config = os.path.join(fleet_package_dir, 'config', 'mars_config.rviz')
+
+    rviz_node = Node(
+        package='rviz2',
+        executable='rviz2',
+        name='rviz2',
+        output='screen',
+        arguments=['-d', rviz_config],
+        parameters=[{'use_sim_time': True}],
+    )
+    ld.add_action(rviz_node)
+    
 
     return ld
