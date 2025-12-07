@@ -73,8 +73,12 @@ def generate_launch_description():
     record_rosbag_arg = DeclareLaunchArgument(
         'record_rosbag', default_value='false', description='Enable rosbag recording (true/false)'
     )
+    launch_rviz_arg = DeclareLaunchArgument(
+        'launch_rviz', default_value='true', description='Whether to launch RViz2'
+    )
 
     record_rosbag = LaunchConfiguration('record_rosbag')
+    launch_rviz = LaunchConfiguration('launch_rviz')
 
     # Build LaunchDescription and add args
     ld = LaunchDescription([
@@ -82,6 +86,7 @@ def generate_launch_description():
         num_robots_arg,
         use_sim_time_arg,
         record_rosbag_arg,
+        launch_rviz_arg,
     ])
 
     ld.add_action(OpaqueFunction(function=build_and_launch_webots, kwargs={'fleet_package': fleet_package}))
@@ -106,7 +111,7 @@ def generate_launch_description():
         package='mars_overseer',
         executable='overseer_node',
         name='overseer',
-        output='screen',
+        output='log',
         parameters=[{'use_sim_time': True}],
     )
     ld.add_action(overseer_node)
@@ -120,9 +125,10 @@ def generate_launch_description():
         package='rviz2',
         executable='rviz2',
         name='rviz2',
-        output='screen',
+        output='log',
         arguments=['-d', rviz_config],
         parameters=[{'use_sim_time': True}],
+        condition=IfCondition(launch_rviz),
     )
     ld.add_action(rviz_node)
     
