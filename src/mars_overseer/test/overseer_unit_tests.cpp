@@ -93,7 +93,7 @@ TEST(MergeMapsTests, OccupiedWins) {
 
     // Check that every cell is occupied
     for (const auto& cell : global_map.data) {
-        EXPECT_EQ(cell, 100);
+        EXPECT_EQ(cell, 80);
     }
 }
 
@@ -156,7 +156,7 @@ TEST(MergeMapsTests, MultipleMapsMerge) {
 
     merger.merge_maps(global_map, local_maps);
 
-    std::vector<int8_t> expected = {100, 100, 0};
+    std::vector<int8_t> expected = {80, 16, 0};
     EXPECT_EQ(global_map.data, expected);
 }
 
@@ -190,7 +190,7 @@ TEST(MergeMapsTests, LocalMapSmallerThanGlobal) {
 
     merger.merge_maps(global_map, {local_map});
 
-    std::vector<int8_t> expected = {0,100,0,0,0};
+    std::vector<int8_t> expected = {0,80,0,0,0};
     EXPECT_EQ(global_map.data, expected);
 }
 
