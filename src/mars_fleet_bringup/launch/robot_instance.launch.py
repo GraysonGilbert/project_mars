@@ -1,10 +1,11 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, RegisterEventHandler
 from launch.substitutions import LaunchConfiguration, Command
 
 from launch_ros.actions import Node
+from launch.event_handlers import OnProcessStart
 
 from ament_index_python.packages import get_package_share_directory
 
@@ -42,6 +43,12 @@ def generate_launch_description():
         description='Use simulation time',
     )
 
+    robot_map_origin = DeclareLaunchArgument(
+        'robot_map_origin',
+        default_value='0.0 0.0 0.0',
+        description='Origin of the robot map in the global map frame: "x y z"',
+    )
+
     def launch_setup(context, *args, **kwargs):
         # Resolve substitutions to plain Python values
         robot_id = LaunchConfiguration('robot_id').perform(context)
@@ -57,6 +64,25 @@ def generate_launch_description():
         convert_types=True
         )
 
+        # -------------------------------------------------------
+        # Static TF: global_map -> robot_1/map
+        # anchor robot_1/map at the global origin
+        # -------------------------------------------------------
+        static_tf_robot1 = Node(
+            package='tf2_ros',
+            executable='static_transform_publisher',
+            name=f'global_to_{robot_id}_map',
+            output='screen',
+            namespace=robot_id,
+            arguments=[
+                LaunchConfiguration('robot_map_origin').perform(context).split()[0],  # x
+                LaunchConfiguration('robot_map_origin').perform(context).split()[1],  # y
+                LaunchConfiguration('robot_map_origin').perform(context).split()[2],  # z
+                '0.0', '0.0', '0.0',      # roll pitch yaw
+                'global_map',             # parent
+                f'{robot_id}/map',            # child
+            ],
+        )
 
         # ---------------------------------------------------------------------
         # Static TF: from robot_i/base_link -> robot_i/LDS-01
@@ -265,21 +291,6 @@ def generate_launch_description():
                 ],
             ),
             Node(
-                package='nav2_map_server',
-                executable='map_server',
-                name='map_server',
-                namespace=robot_id,
-                output='screen',
-                parameters=[
-                    nav2_config,
-                    {
-                        'use_sim_time': use_sim_time,
-                        'yaml_filename': nav2_map,
-                        'frame_id': f'{robot_id}/map',
-                    },
-                ],
-            ),
-            Node(
                 package='nav2_lifecycle_manager',
                 executable='lifecycle_manager',
                 name='lifecycle_manager_navigation',
@@ -291,7 +302,6 @@ def generate_launch_description():
                     # Names are relative to this namespace, so this
                     # manages /robot_i/map_server, /robot_i/planner_server, ...
                     'node_names': [
-                        'map_server',
                         'planner_server',
                         'controller_server',
                         'behavior_server',
@@ -338,10 +348,17 @@ def generate_launch_description():
         waiting_nodes = WaitForControllerConnection(
             target_driver=turtlebot_driver,
             nodes_to_start=ros_control_spawners
-                           + [slam_toolbox, mars_exploration_node]
-                           + nav2_nodes,
+                           + [slam_toolbox]
         )
 
+        # Start Nav2 (planner/controller/BT/lifecycle) and mars_exploration
+        # only after slam_toolbox has started
+        nav2_after_slam = RegisterEventHandler(
+            OnProcessStart(
+                target_action=slam_toolbox,
+                on_start=nav2_nodes + [mars_exploration_node],
+            )
+        )
 
         # Return the actions to add to the LaunchDescription
         return [
@@ -351,6 +368,8 @@ def generate_launch_description():
             robot_state_publisher,
             scan_frame_rewriter,
             footprint_publisher,
+            static_tf_robot1,
+            nav2_after_slam,
         ]
 
     return LaunchDescription([

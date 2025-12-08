@@ -16,6 +16,11 @@ def launch_robots(context: LaunchContext, *args, **kwargs):
     num_robots = int(LaunchConfiguration('num_robots').perform(context))
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
 
+    robot_map_origins = {
+        1: '0.0 0.0 0.0',
+        2: '-0.5 8.5 0.0',
+    }
+
     actions = []
     for i in range(num_robots):
         robot_id = f'robot_{i+1}'
@@ -25,6 +30,7 @@ def launch_robots(context: LaunchContext, *args, **kwargs):
                 launch_arguments={
                     'robot_id': robot_id,
                     'use_sim_time': use_sim_time,
+                    'robot_map_origin': robot_map_origins.get(i+1, '0.0 0.0 0.0'),
                 }.items()
             )
         )
@@ -131,41 +137,5 @@ def generate_launch_description():
         condition=IfCondition(launch_rviz),
     )
     ld.add_action(rviz_node)
-
-    # -------------------------------------------------------
-    # Static TF: global_map -> robot_1/map
-    # anchor robot_1/map at the global origin
-    # -------------------------------------------------------
-    static_tf_robot1 = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='global_to_robot1_map',
-        output='screen',
-        arguments=[
-            '0.0', '0.0', '0.0',      # x y z
-            '0.0', '0.0', '0.0',      # roll pitch yaw
-            'global_map',             # parent
-            'robot_1/map',            # child
-        ],
-    )
-    ld.add_action(static_tf_robot1)
-
-    # -------------------------------------------------------
-    # Static TF: global_map -> robot_2/map
-    # offset of +6.0 m in Y from world file
-    # -------------------------------------------------------
-    static_tf_robot2 = Node(
-        package='tf2_ros',
-        executable='static_transform_publisher',
-        name='global_to_robot2_map',
-        output='screen',
-        arguments=[
-            '-0.5', '8.5', '0.0',      # x y z
-            '0.0', '0.0', '0.0',      # roll pitch yaw
-            'global_map',             # parent
-            'robot_2/map',            # child
-        ],
-    )
-    ld.add_action(static_tf_robot2)
 
     return ld
