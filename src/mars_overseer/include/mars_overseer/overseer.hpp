@@ -2,9 +2,9 @@
  * @file overseer.hpp
  * @author Grayson Gilbert (ggilbert@umd.edu)
  * @author Marcus Hurt (mhurt@umd.edu)
- * @brief Overseer node responsible for collecting local maps from multiple robots
- *        and merging them into a global occupancy grid.
- * 
+ * @brief Overseer node responsible for collecting local maps from multiple
+ * robots and merging them into a global occupancy grid.
+ *
  * @copyright MIT License
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -32,63 +32,61 @@
 #include <map>
 #include <string>
 
-#include "mars_overseer/map_merger.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "nav_msgs/msg/occupancy_grid.hpp"
-#include "tf2_ros/transform_broadcaster.h"
-
-#include "tf2_ros/buffer.hpp"
-#include "tf2_ros/transform_listener.hpp"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
+#include "mars_overseer/map_merger.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
+#include "rclcpp/rclcpp.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_ros/buffer.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2_ros/transform_listener.hpp"
 
-class OverseerNode : public rclcpp::Node
-{
-public:
+class OverseerNode : public rclcpp::Node {
+ public:
+  /**
+   * @brief Construct a new Overseer Node object
+   *
+   * Initializes publishers, subscribers, TF broadcaster, global map state,
+   * and the map merger utility.
+   */
+  OverseerNode();
 
-    /**
-     * @brief Construct a new Overseer Node object
-     * 
-     * Initializes publishers, subscribers, TF broadcaster, global map state,
-     * and the map merger utility.
-     */
-    OverseerNode();
+ private:
+  // Callback for receiving local robot occupancy grid maps
+  void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg,
+                    const std::string& robot_id);
 
-private:
+  // Publishes the TF transform for the global map frame
+  void publish_global_map_tf();
 
-    // Callback for receiving local robot occupancy grid maps
-    void map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg, const std::string& robot_id);
+  // Helper to get vector of local maps
+  std::vector<nav_msgs::msg::OccupancyGrid> get_all_local_maps_vector();
 
-    // Publishes the TF transform for the global map frame
-    void publish_global_map_tf();
+  // Utility class responsible for merging multiple occupancy grids into a
+  // single global map
+  MapMerger map_merger_{10.0};
 
-    // Helper to get vector of local maps
-    std::vector<nav_msgs::msg::OccupancyGrid> get_all_local_maps_vector();
+  // TF Broadcaster used to publish global map transform
+  std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
-    // Utility class responsible for merging multiple occupancy grids into a single global map
-    MapMerger map_merger_{10.0};
+  // Timer that periodically publishes TF transforms
+  rclcpp::TimerBase::SharedPtr tf_timer_;
 
-    // TF Broadcaster used to publish global map transform
-    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
-    std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-    std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
+  // Resulting global occupancy grid after merging local robot maps
+  nav_msgs::msg::OccupancyGrid global_map_;
 
-    // Timer that periodically publishes TF transforms
-    rclcpp::TimerBase::SharedPtr tf_timer_;
+  // Storage for each robots local map, keyed by robot ID
+  std::map<std::string, nav_msgs::msg::OccupancyGrid> local_maps_;
 
-    // Resulting global occupancy grid after merging local robot maps
-    nav_msgs::msg::OccupancyGrid global_map_;
+  // Publisher for merged global map
+  rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
 
-    // Storage for each robots local map, keyed by robot ID
-    std::map<std::string, nav_msgs::msg::OccupancyGrid> local_maps_;
-    
-    // Publisher for merged global map
-    rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr map_pub_;
-
-    // Subscriber for incoming local maps
-    std::map<std::string, rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr> map_subs_;
-
+  // Subscriber for incoming local maps
+  std::map<std::string,
+           rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr>
+      map_subs_;
 };
 
-#endif // OVERSEER_NODE_HPP
-
+#endif  // OVERSEER_NODE_HPP

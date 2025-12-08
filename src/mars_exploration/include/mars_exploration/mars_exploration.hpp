@@ -50,28 +50,28 @@ class MarsExploration {
 
   /**
    * @brief Set the Border Margin Cells object
-   * 
+   *
    * @param cells Number of cells to use as border margin
    */
   void setBorderMarginCells(int cells) { border_margin_cells_ = cells; }
 
   /**
    * @brief Mark the last goal as failed at the given time.
-   * 
+   *
    * @param now_sec Current time in seconds.
    */
   void markLastGoalFailed(double now_sec);
 
   /**
    * @brief Set the Failed Goal Radius object
-   * 
+   *
    * @param r Radius in meters.
    */
   void setFailedGoalRadius(double r) { failed_goal_radius_m_ = r; }
 
   /**
    * @brief Set the Failed Goal Forget Time object
-   * 
+   *
    * @param t Time in seconds.
    */
   void setFailedGoalForgetTime(double t) { failed_goal_forget_time_sec_ = t; }

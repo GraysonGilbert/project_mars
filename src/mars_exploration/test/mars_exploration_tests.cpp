@@ -109,9 +109,9 @@ TEST(MarsExplorationTest, ClearGoal) {
   explorer.setBorderMarginCells(0);
   explorer.setBorderMarginCells(0);
   auto grid = makeGrid(5, 5, -1);
-  grid.data[0] = 0;  // Top-left free
-  grid.data[4] = 0;  // Top-right free
-  grid.data[20] = 0; // Bottom-left free
+  grid.data[0] = 0;   // Top-left free
+  grid.data[4] = 0;   // Top-right free
+  grid.data[20] = 0;  // Bottom-left free
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
@@ -156,7 +156,8 @@ TEST(MarsExplorationTest, SameGoalRepeatLogic) {
   explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, -1);
   grid.data[0] = 0;  // free cell
-  grid.data[8] = 0;  // add a second free cell to allow repeat logic to find a new goal
+  grid.data[8] =
+      0;  // add a second free cell to allow repeat logic to find a new goal
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
@@ -202,7 +203,7 @@ TEST(MarsExplorationTest, MapUpdateChangesGoal) {
   explorer.setBorderMarginCells(0);
   auto grid1 = makeGrid(3, 3, 0);
   grid1.data[4] = -1;  // center unknown
-  grid1.data[0] = 0;  // ensure a free cell adjacent to unknown
+  grid1.data[0] = 0;   // ensure a free cell adjacent to unknown
   explorer.setMap(grid1);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
@@ -211,7 +212,7 @@ TEST(MarsExplorationTest, MapUpdateChangesGoal) {
   auto goal1 = explorer.getGoal();
   auto grid2 = makeGrid(3, 3, 0);
   grid2.data[8] = -1;  // bottom-right unknown
-  grid2.data[7] = 0;  // ensure a free cell adjacent to unknown
+  grid2.data[7] = 0;   // ensure a free cell adjacent to unknown
   explorer.setMap(grid2);
   EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   auto goal2 = explorer.getGoal();
@@ -303,7 +304,7 @@ TEST(MarsExplorationTest, SetGoalAfterClearGoal) {
   explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 0);
   grid.data[4] = -1;  // center unknown
-  grid.data[0] = 0;  // ensure a free cell adjacent to unknown
+  grid.data[0] = 0;   // ensure a free cell adjacent to unknown
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);

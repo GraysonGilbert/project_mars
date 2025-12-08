@@ -44,8 +44,7 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
   goal_topic_ = this->declare_parameter<std::string>("goal_topic", goal_topic_);
   cmd_vel_topic_ =
       this->declare_parameter<std::string>("cmd_vel_topic", cmd_vel_topic_);
-  map_topic_ =
-      this->declare_parameter<std::string>("map_topic", map_topic_);
+  map_topic_ = this->declare_parameter<std::string>("map_topic", map_topic_);
   global_frame_ =
       this->declare_parameter<std::string>("global_frame", global_frame_);
   base_frame_ = this->declare_parameter<std::string>("base_frame", base_frame_);
@@ -54,7 +53,7 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
   max_goal_duration_sec_ =
       this->declare_parameter<double>("max_goal_duration_sec", 60.0);
   int border_margin_cells =
-    this->declare_parameter<int>("border_margin_cells", 5);
+      this->declare_parameter<int>("border_margin_cells", 5);
 
   exploration_ = MarsExploration(min_frontier_distance);
   exploration_.setBorderMarginCells(border_margin_cells);
@@ -351,20 +350,21 @@ void MarsExplorationNode::controlTimerCallback() {
   send_goal_options.goal_response_callback =
       [this](std::shared_ptr<GoalHandleNavigateToPose> goal_handle) {
         if (!goal_handle) {
-        RCLCPP_WARN(this->get_logger(),
-                    "Exploration Nav2 goal was REJECTED by the action server.");
-        have_active_nav_goal_ = false;
+          RCLCPP_WARN(
+              this->get_logger(),
+              "Exploration Nav2 goal was REJECTED by the action server.");
+          have_active_nav_goal_ = false;
 
-        double now_sec = this->now().seconds();
-        exploration_.markLastGoalFailed(now_sec);
-        exploration_.clearGoal();
+          double now_sec = this->now().seconds();
+          exploration_.markLastGoalFailed(now_sec);
+          exploration_.clearGoal();
 
-        last_goal_reject_time_ = this->now();
-        return;
-      }
+          last_goal_reject_time_ = this->now();
+          return;
+        }
 
-      RCLCPP_INFO(this->get_logger(),
-                  "Exploration Nav2 goal was ACCEPTED by the action server.");
+        RCLCPP_INFO(this->get_logger(),
+                    "Exploration Nav2 goal was ACCEPTED by the action server.");
       };
 
   // ------------------------------------------------------------

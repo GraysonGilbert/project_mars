@@ -54,8 +54,7 @@ bool MarsExploration::setNearestUnmappedCellAsGoal(double now_sec) {
   auto cell_is_valid_frontier = [&](int x, int y, double &wx, double &wy,
                                     double &dist2) -> bool {
     // 0) Skip cells too close to map edges to avoid costmap cropping
-    if (x < border_margin_cells_ ||
-        y < border_margin_cells_ ||
+    if (x < border_margin_cells_ || y < border_margin_cells_ ||
         x >= width - border_margin_cells_ ||
         y >= height - border_margin_cells_) {
       return false;
@@ -97,7 +96,8 @@ bool MarsExploration::setNearestUnmappedCellAsGoal(double now_sec) {
       return false;
     }
 
-    // --- 4) Require adjacency to a known FREE cell and not near a previous failed goal ---
+    // --- 4) Require adjacency to a known FREE cell and not near a previous
+    // failed goal ---
     for (const auto &fg : failed_goals_) {
       const double dxg = wx - fg.pose.x;
       const double dyg = wy - fg.pose.y;
@@ -217,11 +217,10 @@ void MarsExploration::markLastGoalFailed(double now_sec) {
 }
 
 void MarsExploration::pruneFailedGoals(double now_sec) {
-  failed_goals_.erase(
-      std::remove_if(failed_goals_.begin(), failed_goals_.end(),
-                     [&](const FailedGoal &fg) {
-                       return (now_sec - fg.timestamp_sec) >
-                              failed_goal_forget_time_sec_;
-                     }),
-      failed_goals_.end());
+  failed_goals_.erase(std::remove_if(failed_goals_.begin(), failed_goals_.end(),
+                                     [&](const FailedGoal &fg) {
+                                       return (now_sec - fg.timestamp_sec) >
+                                              failed_goal_forget_time_sec_;
+                                     }),
+                      failed_goals_.end());
 }
