@@ -1,6 +1,7 @@
 build/
 install/
 log/
+combined_test_coverage/
 **/compile_commands.json
 **/.cache/
 **/mars_exploration/docs/
