@@ -168,7 +168,7 @@ void OverseerNode::map_callback(
     global_map_.header.stamp = now;
     map_pub_->publish(global_map_);
 
-    RCLCPP_INFO(this->get_logger(), "Merged map published after receiving data from %s", robot_id.c_str());
+    // RCLCPP_INFO(this->get_logger(), "Merged map published after receiving data from %s", robot_id.c_str());
 }
 
 std::vector<nav_msgs::msg::OccupancyGrid> OverseerNode::get_all_local_maps_vector()

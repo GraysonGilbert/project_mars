@@ -53,8 +53,11 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
       this->declare_parameter<double>("min_frontier_distance", 0.5);
   max_goal_duration_sec_ =
       this->declare_parameter<double>("max_goal_duration_sec", 60.0);
+  int border_margin_cells =
+    this->declare_parameter<int>("border_margin_cells", 5);
 
   exploration_ = MarsExploration(min_frontier_distance);
+  exploration_.setBorderMarginCells(border_margin_cells);
 
   // TF buffer + listener
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
@@ -283,7 +286,8 @@ void MarsExplorationNode::controlTimerCallback() {
       return;
     }
 
-    if (!exploration_.setNearestUnmappedCellAsGoal()) {
+    double now_sec = now.seconds();
+    if (!exploration_.setNearestUnmappedCellAsGoal(now_sec)) {
       // No frontier / unmapped cell found -> exploration done
       RCLCPP_INFO_THROTTLE(
           get_logger(), *get_clock(), 10000,
@@ -347,18 +351,20 @@ void MarsExplorationNode::controlTimerCallback() {
   send_goal_options.goal_response_callback =
       [this](std::shared_ptr<GoalHandleNavigateToPose> goal_handle) {
         if (!goal_handle) {
-          RCLCPP_WARN(
-              this->get_logger(),
-              "Exploration Nav2 goal was REJECTED by the action server.");
-          have_active_nav_goal_ = false;
-          exploration_.clearGoal();
-          last_goal_reject_time_ = this->now();
-          return;
-        }
+        RCLCPP_WARN(this->get_logger(),
+                    "Exploration Nav2 goal was REJECTED by the action server.");
+        have_active_nav_goal_ = false;
 
-        RCLCPP_INFO(this->get_logger(),
-                    "Exploration Nav2 goal was ACCEPTED by the action server.");
-        // keep have_active_nav_goal_ = true until result callback
+        double now_sec = this->now().seconds();
+        exploration_.markLastGoalFailed(now_sec);
+        exploration_.clearGoal();
+
+        last_goal_reject_time_ = this->now();
+        return;
+      }
+
+      RCLCPP_INFO(this->get_logger(),
+                  "Exploration Nav2 goal was ACCEPTED by the action server.");
       };
 
   // ------------------------------------------------------------
@@ -367,25 +373,19 @@ void MarsExplorationNode::controlTimerCallback() {
   send_goal_options.result_callback =
       [this](const GoalHandleNavigateToPose::WrappedResult& result) {
         have_active_nav_goal_ = false;
-        exploration_
-            .clearGoal();  // Let the next timer tick choose another frontier
 
-        switch (result.code) {
-          case rclcpp_action::ResultCode::SUCCEEDED:
-            RCLCPP_INFO(this->get_logger(), "Exploration Nav2 goal SUCCEEDED.");
-            break;
-          case rclcpp_action::ResultCode::ABORTED:
-            RCLCPP_WARN(this->get_logger(), "Exploration Nav2 goal ABORTED.");
-            break;
-          case rclcpp_action::ResultCode::CANCELED:
-            RCLCPP_WARN(this->get_logger(), "Exploration Nav2 goal CANCELED.");
-            break;
-          default:
-            RCLCPP_WARN(
-                this->get_logger(),
-                "Exploration Nav2 goal finished with unknown result code.");
-            break;
+        if (result.code == rclcpp_action::ResultCode::SUCCEEDED) {
+          RCLCPP_INFO(this->get_logger(), "Exploration Nav2 goal SUCCEEDED.");
+          // success: we *don’t* mark as failed
+        } else {
+          RCLCPP_WARN(this->get_logger(),
+                      "Exploration Nav2 goal did not succeed (code=%d).",
+                      static_cast<int>(result.code));
+          double now_sec = this->now().seconds();
+          exploration_.markLastGoalFailed(now_sec);
         }
+
+        exploration_.clearGoal();
       };
 
   // ------------------------------------------------------------

@@ -33,6 +33,11 @@ struct Pose2D {
   double yaw{0.0};
 };
 
+struct FailedGoal {
+  Pose2D pose;
+  double timestamp_sec;  // wall time in seconds, passed in from node
+};
+
 class MarsExploration {
  public:
   /**
@@ -42,6 +47,34 @@ class MarsExploration {
    */
   explicit MarsExploration(double min_frontier_distance_m = 0.3)
       : min_frontier_distance_m_(min_frontier_distance_m) {}
+
+  /**
+   * @brief Set the Border Margin Cells object
+   * 
+   * @param cells Number of cells to use as border margin
+   */
+  void setBorderMarginCells(int cells) { border_margin_cells_ = cells; }
+
+  /**
+   * @brief Mark the last goal as failed at the given time.
+   * 
+   * @param now_sec Current time in seconds.
+   */
+  void markLastGoalFailed(double now_sec);
+
+  /**
+   * @brief Set the Failed Goal Radius object
+   * 
+   * @param r Radius in meters.
+   */
+  void setFailedGoalRadius(double r) { failed_goal_radius_m_ = r; }
+
+  /**
+   * @brief Set the Failed Goal Forget Time object
+   * 
+   * @param t Time in seconds.
+   */
+  void setFailedGoalForgetTime(double t) { failed_goal_forget_time_sec_ = t; }
 
   /**
    * @brief Set the occupancy grid map for exploration.
@@ -81,9 +114,12 @@ class MarsExploration {
   /**
    * @brief Pick the nearest unknown cell at least min_frontier_distance_m_ from
    * robot as a goal.
+   *
+   * @param now_sec Current time in seconds.
+   *
    * @return True if a goal was set, false otherwise.
    */
-  bool setNearestUnmappedCellAsGoal();
+  bool setNearestUnmappedCellAsGoal(double now_sec);
 
   /**
    * @brief Set the minimum frontier distance for exploration goals.
@@ -92,6 +128,8 @@ class MarsExploration {
   void setMinFrontierDistance(double d) { min_frontier_distance_m_ = d; }
 
  private:
+  void pruneFailedGoals(double now_sec);
+
   nav_msgs::msg::OccupancyGrid map_;
   bool have_map_{false};
 
@@ -109,6 +147,12 @@ class MarsExploration {
 
   bool include_low_confidence_cells_{true};
   int low_confidence_value_{20};
+  int border_margin_cells_{10};
+
+  std::vector<FailedGoal> failed_goals_;
+  double failed_goal_radius_m_{0.5};
+  double failed_goal_radius_m2_{0.25};  // r^2
+  double failed_goal_forget_time_sec_{60.0};
 
   double min_frontier_distance_m_;  // meters
 };

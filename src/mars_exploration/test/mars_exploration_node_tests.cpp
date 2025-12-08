@@ -126,11 +126,11 @@ TEST_CASE("mars_exploration_node default parameters", "[params][defaults]") {
 
   std::string goal_topic;
   REQUIRE(node->get_parameter("goal_topic", goal_topic));
-  CHECK(goal_topic == "/goal_pose");
+  CHECK(goal_topic == "goal_pose");
 
   std::string cmd_vel_topic;
   REQUIRE(node->get_parameter("cmd_vel_topic", cmd_vel_topic));
-  CHECK(cmd_vel_topic == "/cmd_vel");
+  CHECK(cmd_vel_topic == "cmd_vel");
 
   std::string global_frame;
   REQUIRE(node->get_parameter("global_frame", global_frame));

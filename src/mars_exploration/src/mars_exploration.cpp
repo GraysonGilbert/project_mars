@@ -28,11 +28,13 @@
 #include <cmath>
 #include <limits>
 
-bool MarsExploration::setNearestUnmappedCellAsGoal() {
+bool MarsExploration::setNearestUnmappedCellAsGoal(double now_sec) {
   if (!have_map_ || !have_pose_) {
     have_goal_ = false;
     return false;
   }
+
+  pruneFailedGoals(now_sec);
 
   const auto &info = map_.info;
   const auto &data = map_.data;
@@ -51,6 +53,14 @@ bool MarsExploration::setNearestUnmappedCellAsGoal() {
 
   auto cell_is_valid_frontier = [&](int x, int y, double &wx, double &wy,
                                     double &dist2) -> bool {
+    // 0) Skip cells too close to map edges to avoid costmap cropping
+    if (x < border_margin_cells_ ||
+        y < border_margin_cells_ ||
+        x >= width - border_margin_cells_ ||
+        y >= height - border_margin_cells_) {
+      return false;
+    }
+
     const int idx = y * width + x;
     const int occ = data[idx];
 
@@ -87,7 +97,16 @@ bool MarsExploration::setNearestUnmappedCellAsGoal() {
       return false;
     }
 
-    // --- 4) Require adjacency to a known FREE cell (frontier behavior) ---
+    // --- 4) Require adjacency to a known FREE cell and not near a previous failed goal ---
+    for (const auto &fg : failed_goals_) {
+      const double dxg = wx - fg.pose.x;
+      const double dyg = wy - fg.pose.y;
+      const double d2g = dxg * dxg + dyg * dyg;
+      if (d2g < failed_goal_radius_m2_) {
+        return false;
+      }
+    }
+
     bool adjacent_to_free = false;
     for (int ny = std::max(0, y - 1); ny <= std::min(height - 1, y + 1); ++ny) {
       for (int nx = std::max(0, x - 1); nx <= std::min(width - 1, x + 1);
@@ -190,4 +209,19 @@ bool MarsExploration::setNearestUnmappedCellAsGoal() {
   have_last_goal_ = true;
 
   return true;
+}
+
+void MarsExploration::markLastGoalFailed(double now_sec) {
+  if (!have_last_goal_) return;
+  failed_goals_.push_back(FailedGoal{last_goal_, now_sec});
+}
+
+void MarsExploration::pruneFailedGoals(double now_sec) {
+  failed_goals_.erase(
+      std::remove_if(failed_goals_.begin(), failed_goals_.end(),
+                     [&](const FailedGoal &fg) {
+                       return (now_sec - fg.timestamp_sec) >
+                              failed_goal_forget_time_sec_;
+                     }),
+      failed_goals_.end());
 }

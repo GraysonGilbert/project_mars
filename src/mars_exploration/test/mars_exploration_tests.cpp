@@ -44,7 +44,7 @@ nav_msgs::msg::OccupancyGrid makeGrid(int width, int height, int value = -1) {
 
 TEST(MarsExplorationTest, NoMapNoPose_NoGoal) {
   MarsExploration explorer;
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
@@ -52,7 +52,7 @@ TEST(MarsExplorationTest, OnlyMap_NoGoal) {
   MarsExploration explorer;
   auto grid = makeGrid(5, 5);
   explorer.setMap(grid);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
@@ -60,7 +60,7 @@ TEST(MarsExplorationTest, OnlyPose_NoGoal) {
   MarsExploration explorer;
   Pose2D pose{2.0, 2.0, 0.0};
   explorer.updatePose(pose);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
@@ -68,11 +68,12 @@ TEST(MarsExplorationTest, SimpleUnknownCell_GoalSet) {
   MarsExploration explorer;
   auto grid = makeGrid(3, 3, 0);  // all free
   grid.data[4] = -1;              // center cell unknown
+  explorer.setBorderMarginCells(0);
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);  // allow any distance
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_TRUE(explorer.hasGoal());
   const auto &goal = explorer.getGoal();
   EXPECT_NEAR(goal.x, 1.5, 1e-6);
@@ -81,43 +82,53 @@ TEST(MarsExplorationTest, SimpleUnknownCell_GoalSet) {
 
 TEST(MarsExplorationTest, NoFrontier_NoGoal) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 100);  // all occupied
   explorer.setMap(grid);
   Pose2D pose{1.0, 1.0, 0.0};
   explorer.updatePose(pose);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
 TEST(MarsExplorationTest, LowConfidenceCells_GoalSet) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 0);  // all free
   grid.data[2] = 10;              // low confidence
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_TRUE(explorer.hasGoal());
 }
 
 TEST(MarsExplorationTest, ClearGoal) {
   MarsExploration explorer;
-  auto grid = makeGrid(3, 3, -1);
-  grid.data[0] =
-      0;  // Make one cell free so unknowns can be adjacent to a frontier
+  explorer.setBorderMarginCells(0);
+  explorer.setBorderMarginCells(0);
+  auto grid = makeGrid(5, 5, -1);
+  grid.data[0] = 0;  // Top-left free
+  grid.data[4] = 0;  // Top-right free
+  grid.data[20] = 0; // Bottom-left free
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   explorer.clearGoal();
   EXPECT_FALSE(explorer.hasGoal());
+  // Reset map to ensure a new frontier is available
+  grid.data[24] = 0;  // Bottom-right free
+  explorer.setMap(grid);
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(30.0));
 }
 
 // Test changing include_low_confidence_cells_ and low_confidence_value_
 TEST(MarsExplorationTest, LowConfidenceSettings) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 0);  // all free
   grid.data[1] = 15;              // low confidence
   explorer.setMap(grid);
@@ -125,7 +136,7 @@ TEST(MarsExplorationTest, LowConfidenceSettings) {
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
   // Should find low confidence cell as goal
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   explorer.clearGoal();
   // Now set low_confidence_value_ lower so cell[1] is not considered low
   // confidence Directly access private member for test (if allowed), otherwise
@@ -136,21 +147,23 @@ TEST(MarsExplorationTest, LowConfidenceSettings) {
   grid2.data[1] = 25;  // above default low_confidence_value_
   explorer.setMap(grid2);
   explorer.updatePose(pose);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
 }
 
 // Test repeated goal selection logic (same goal tolerance and repeats)
 TEST(MarsExplorationTest, SameGoalRepeatLogic) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, -1);
   grid.data[0] = 0;  // free cell
+  grid.data[8] = 0;  // add a second free cell to allow repeat logic to find a new goal
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
   // Call setNearestUnmappedCellAsGoal multiple times to trigger repeat logic
   for (int i = 0; i < 5; ++i) {
-    explorer.setNearestUnmappedCellAsGoal();
+    explorer.setNearestUnmappedCellAsGoal(0.0);
   }
   // Should still have a goal
   EXPECT_TRUE(explorer.hasGoal());
@@ -165,37 +178,42 @@ TEST(MarsExplorationTest, EmptyMap) {
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
 }
 
 // Edge case: updatePose with extreme values
 TEST(MarsExplorationTest, ExtremePose) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, -1);
   grid.data[0] = 0;
+  grid.data[8] = 0;  // add a second free cell to ensure a frontier exists
   explorer.setMap(grid);
   Pose2D pose{1e6, -1e6, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
   // Should still find a goal, but far away
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
 }
 
 // Test setMap with a map update
 TEST(MarsExplorationTest, MapUpdateChangesGoal) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid1 = makeGrid(3, 3, 0);
   grid1.data[4] = -1;  // center unknown
+  grid1.data[0] = 0;  // ensure a free cell adjacent to unknown
   explorer.setMap(grid1);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   auto goal1 = explorer.getGoal();
   auto grid2 = makeGrid(3, 3, 0);
   grid2.data[8] = -1;  // bottom-right unknown
+  grid2.data[7] = 0;  // ensure a free cell adjacent to unknown
   explorer.setMap(grid2);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   auto goal2 = explorer.getGoal();
   EXPECT_NE(goal1.x, goal2.x);
   EXPECT_NE(goal1.y, goal2.y);
@@ -204,18 +222,21 @@ TEST(MarsExplorationTest, MapUpdateChangesGoal) {
 // Test updatePose with a pose update
 TEST(MarsExplorationTest, PoseUpdateChangesGoal) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 0);
   grid.data[0] = -1;  // top-left unknown
   grid.data[8] = -1;  // bottom-right unknown
+  grid.data[1] = 0;   // free cell adjacent to top-left unknown
+  grid.data[7] = 0;   // free cell adjacent to bottom-right unknown
   explorer.setMap(grid);
   Pose2D pose1{0.0, 0.0, 0.0};  // near top-left
   explorer.updatePose(pose1);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   auto goal1 = explorer.getGoal();
   Pose2D pose2{2.0, 2.0, 0.0};  // near bottom-right
   explorer.updatePose(pose2);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   auto goal2 = explorer.getGoal();
   EXPECT_NE(goal1.x, goal2.x);
   EXPECT_NE(goal1.y, goal2.y);
@@ -246,7 +267,7 @@ TEST(MarsExplorationTest, HighMinFrontierDistance) {
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(100.0);  // very high
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
@@ -257,7 +278,7 @@ TEST(MarsExplorationTest, AllOccupiedNoGoal) {
   explorer.setMap(grid);
   Pose2D pose{1.0, 1.0, 0.0};
   explorer.updatePose(pose);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_FALSE(explorer.hasGoal());
 }
 
@@ -273,22 +294,28 @@ TEST(MarsExplorationTest, LowConfidenceCellsIgnoredIfAboveThreshold) {
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_FALSE(explorer.setNearestUnmappedCellAsGoal(0.0));
 }
 
 // Test repeated calls to setNearestUnmappedCellAsGoal after clearing the goal
 TEST(MarsExplorationTest, SetGoalAfterClearGoal) {
   MarsExploration explorer;
+  explorer.setBorderMarginCells(0);
   auto grid = makeGrid(3, 3, 0);
   grid.data[4] = -1;  // center unknown
+  grid.data[0] = 0;  // ensure a free cell adjacent to unknown
   explorer.setMap(grid);
   Pose2D pose{0.0, 0.0, 0.0};
   explorer.updatePose(pose);
   explorer.setMinFrontierDistance(0.0);
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   explorer.clearGoal();
   EXPECT_FALSE(explorer.hasGoal());
-  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal());
+  // Reset map to ensure a new frontier is available
+  grid.data[8] = -1;  // add another unknown cell
+  grid.data[7] = 0;   // ensure a free cell adjacent to new unknown
+  explorer.setMap(grid);
+  EXPECT_TRUE(explorer.setNearestUnmappedCellAsGoal(0.0));
   EXPECT_TRUE(explorer.hasGoal());
 }
 
