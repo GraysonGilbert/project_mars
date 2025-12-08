@@ -21,25 +21,7 @@ source /opt/ros/humble/setup.bash
 set -u                          # re-enable undefined variable check
 
 ###############################
-# 2. run my_model's "docs" target
-###############################
-colcon build \
-       --event-handlers console_cohesion+ \
-       --packages-select my_model \
-       --cmake-target "docs"
-##echo "open src/my_model/docs/html/index.html"
-
-###############################
-# 3. run my_controller's "docs" target
-###############################
-colcon build \
-       --event-handlers console_cohesion+ \
-       --packages-select my_controller \
-       --cmake-target "docs"
-##echo "open src/my_controller/docs/html/index.html"
-
-###############################
-# 4. run mars_exploration's "docs" target
+# 2. run mars_exploration's "docs" target
 ###############################
 colcon build \
        --event-handlers console_cohesion+ \
@@ -48,13 +30,22 @@ colcon build \
 ##echo "open src/mars_exploration/docs/html/index.html"
 
 ###############################
-# 5. run mars_overseer's "docs" target
+# 3. run mars_overseer's "docs" target
 ###############################
 colcon build \
        --event-handlers console_cohesion+ \
        --packages-select mars_overseer \
        --cmake-target "docs"
 ##echo "open src/mars_overseer/docs/html/index.html"
+
+###############################
+# 4. run mars_fleet_bringup's "docs" target
+###############################
+colcon build \
+       --event-handlers console_cohesion+ \
+       --packages-select mars_fleet_bringup \
+       --cmake-target "docs"
+##echo "open src/mars_fleet_bringup/docs/html/index.html"
 
 ###############################
 # 6. combine all docs
