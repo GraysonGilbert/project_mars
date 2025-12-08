@@ -2,7 +2,7 @@ name: Run Unit Test and Upload Coverage Report
 on:
   # Triggered whenever push to main 
   push:
-    branches: [ "main", "iteration_1" ]
+    branches: [ "main", "iteration_1", "iteration_2" ]
 
   # Triggered whenever a pull request is created on main
   pull_request:
