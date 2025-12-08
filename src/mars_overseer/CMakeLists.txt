@@ -13,6 +13,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs)
 find_package(Doxygen REQUIRED)    # add doxygen support
 find_package(catch_ros2 REQUIRED)
 
@@ -34,6 +35,7 @@ ament_target_dependencies(overseer_lib
     geometry_msgs
     tf2
     tf2_ros
+    tf2_geometry_msgs
 )
 add_executable(overseer_node src/overseer.cpp)
 
@@ -118,7 +120,6 @@ if(BUILD_TESTING)
 
   # Link any dependencies your tests need:
   target_link_libraries(overseer_unit_tests
-    
     gtest
     overseer_lib
     #${PROJECT_NAME}
@@ -141,7 +142,7 @@ if(BUILD_TESTING)
   # This CMake function allows the integration test to be run
   # when running "colcon test".
   catch_ros2_add_integration_test (integration_test
-    LAUNCH_FILE integration_tests.launch.yaml
+    LAUNCH_FILE integration_tests.launch.py
 
     )
 

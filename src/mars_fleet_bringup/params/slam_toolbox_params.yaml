@@ -1,0 +1,56 @@
+robot_1:
+  slam_toolbox:
+    ros__parameters:
+
+      # Frame configuration
+      map_frame: robot_1/map
+      odom_frame: robot_1/odom
+      base_frame: robot_1/base_link   # or "base_link" depending on your URDF
+      scan_topic: scan
+      use_sim_time: true
+      
+      provide_odom_frame: false
+      publish_tf: false
+
+      max_laser_range: 8.0  # meters
+
+      # Core behavior
+      mode: mapping   # options: "mapping", "localization", "mapping_continuous"
+      slam_approach: "full"   # use the global-backend graph
+      # tf_buffer_duration: 10.0  # seconds, for example
+
+      resolution: 0.05
+      map_update_interval: 1.0
+
+      # General solver settings
+      solver_plugin: "solver_plugins::CeresSolver"
+      ceres_solver_options:
+        max_num_iterations: 10
+        num_threads: 4
+
+robot_2:
+  slam_toolbox:
+    ros__parameters:
+
+      map_frame: robot_2/map
+      odom_frame: robot_2/odom
+      base_frame: robot_2/base_link
+      scan_topic: scan
+      use_sim_time: true
+
+      provide_odom_frame: false
+      publish_tf: false
+
+      min_laser_range: 0.1
+      max_laser_range: 3.5
+
+      mode: mapping
+      slam_approach: "full"
+
+      resolution: 0.05
+      map_update_interval: 1.0
+
+      solver_plugin: "solver_plugins::CeresSolver"
+      ceres_solver_options:
+        max_num_iterations: 10
+        num_threads: 4

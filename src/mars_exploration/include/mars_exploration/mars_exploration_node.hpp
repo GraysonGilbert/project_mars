@@ -1,7 +1,7 @@
 /**
  * @file mars_exploration_node.hpp
  * @author Marcus Hurt (mhurt@umd.edu)
- * @author Grayson Guilbert (ggilbert@umd.edu)
+ * @author Grayson Gilbert (ggilbert@umd.edu)
  * @brief ROS 2 node wrapper for the MarsExploration core logic (goal-only).
  *
  * @copyright MIT License
@@ -72,11 +72,11 @@ class MarsExplorationNode : public rclcpp::Node {
   double reject_retry_delay_sec_{
       1.0};  // s: wait after rejection before trying again
   double control_rate_hz_{20.0};
-  std::string goal_topic_{"/goal_pose"};
-  std::string cmd_vel_topic_{"/cmd_vel"};
+  std::string goal_topic_{"goal_pose"};
+  std::string cmd_vel_topic_{"cmd_vel"};
+  std::string map_topic_{"map"};
   std::string global_frame_{"map"};
   std::string base_frame_{"base_link"};
-
   // For dt computation
   rclcpp::Time last_control_time_;
   bool have_last_control_time_{false};

@@ -1,0 +1,163 @@
+<?xml version="1.0"?>
+<robot name="">
+
+  <!-- =============================
+       Basic frame tree
+       (map and odom are NOT defined here;
+        slam_toolbox publishes those)
+       ============================= -->
+
+  <!-- Root in robot frame -->
+  <link name="base_footprint" />
+
+  <!-- Main body -->
+  <link name="base_link" />
+
+  <joint name="base_footprint_to_base_link"
+         type="fixed">
+    <parent link="base_footprint" />
+    <child  link="base_link" />
+    <!-- adjust if you want a z offset -->
+    <origin xyz="0 0 0" rpy="0 0 0" />
+  </joint>
+
+  <!-- LIDAR frame (LDS-01) -->
+  <link name="LDS-01" />
+
+  <joint name="base_link_to_LDS-01"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="LDS-01" />
+    <!-- position of the lidar on the robot;
+         tweak as needed -->
+    <origin xyz="0 0 0.15" rpy="0 0 0" />
+  </joint>
+
+  <!-- IMU frame -->
+  <link name="imu_link" />
+
+  <joint name="base_link_to_imu"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="imu_link" />
+    <!-- tweak to match physical mounting -->
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+  </joint>
+
+  <!-- Optional frames to mirror your single-robot TF tree.
+       They’re mostly useful so tools have nice places to attach. -->
+
+  <link name="inertial_unit" />
+  <joint name="base_link_to_inertial_unit"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="inertial_unit" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+  </joint>
+
+  <link name="accelerometer" />
+  <joint name="base_link_to_accelerometer"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="accelerometer" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+  </joint>
+
+  <link name="gyro" />
+  <joint name="base_link_to_gyro"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="gyro" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+  </joint>
+
+  <link name="compass" />
+  <joint name="base_link_to_compass"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="compass" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+  </joint>
+
+  <link name="gps" />
+  <joint name="base_link_to_gps"
+         type="fixed">
+    <parent link="base_link" />
+    <child  link="gps" />
+    <origin xyz="0 0 0.10" rpy="0 0 0" />
+  </joint>
+
+  <!-- Wheels (names match your ros2_control joints) -->
+  <link name="left_wheel" />
+  <link name="right_wheel" />
+
+  <joint name="left wheel motor"
+         type="continuous">
+    <parent link="base_link" />
+    <child  link="left_wheel" />
+    <!-- tweak position + axis as needed -->
+    <origin xyz="0 0.08 0.0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <joint name="right wheel motor"
+         type="continuous">
+    <parent link="base_link" />
+    <child  link="right_wheel" />
+    <origin xyz="0 -0.08 0.0" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+  </joint>
+
+  <!-- =============================
+       Webots-specific configuration
+       ============================= -->
+
+  <webots>
+    <device reference="LDS-01" type="Lidar">
+      <ros>
+        <enabled>true</enabled>
+        <updateRate>5</updateRate>
+        <!-- RELATIVE topics; they’ll become
+             /robot_X/scan when used under a namespace -->
+        <topicName>scan</topicName>
+        <alwaysOn>false</alwaysOn>
+        <!-- This frameName must match the link name above -->
+        <frameName>LDS-01</frameName>
+      </ros>
+    </device>
+
+    <plugin type="webots_ros2_driver::Ros2IMU">
+      <enabled>true</enabled>
+      <updateRate>20</updateRate>
+      <topicName>imu</topicName>
+      <alwaysOn>false</alwaysOn>
+      <!-- Again, matches link name above -->
+      <frameName>imu_link</frameName>
+      <inertialUnitName>inertial_unit</inertialUnitName>
+      <gyroName>gyro</gyroName>
+      <accelerometerName>accelerometer</accelerometerName>
+    </plugin>
+
+    <plugin type="webots_ros2_control::Ros2Control" />
+  </webots>
+
+  <!-- =============================
+       ros2_control interfaces
+       ============================= -->
+  <ros2_control name="WebotsControl" type="system">
+    <hardware>
+      <plugin>webots_ros2_control::Ros2ControlSystem</plugin>
+    </hardware>
+
+    <joint name="right wheel motor">
+      <state_interface name="position"/>
+      <command_interface name="velocity"/>
+    </joint>
+
+    <joint name="left wheel motor">
+      <state_interface name="position"/>
+      <command_interface name="velocity"/>
+    </joint>
+  </ros2_control>
+
+</robot>
