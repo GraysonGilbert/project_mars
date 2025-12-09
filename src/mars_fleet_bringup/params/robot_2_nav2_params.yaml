@@ -1,3 +1,9 @@
+behavior_server:
+  ros__parameters:
+    local_frame: robot_2/odom
+    global_frame: robot_2/map
+    robot_base_frame: robot_2/base_link
+
 bt_navigator:
   ros__parameters:
     use_sim_time: True
@@ -5,8 +11,8 @@ bt_navigator:
     robot_base_frame: robot_2/base_link
     odom_topic: odom
     default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
-    bt_loop_duration: 20
-    default_server_timeout: 20
+    bt_loop_duration: 60
+    default_server_timeout: 60
     enable_groot_monitoring: True
     groot_zmq_publisher_port: 1666
     groot_zmq_server_port: 1667

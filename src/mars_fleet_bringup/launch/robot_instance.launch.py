@@ -336,7 +336,7 @@ def generate_launch_description():
                     'global_frame': f'{robot_id}/map',
                     'base_frame':   f'{robot_id}/base_link',
 
-                    'control_rate_hz': 20.0,
+                    'control_rate_hz': 1.0,
                 },
             ],
         )

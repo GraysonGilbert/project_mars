@@ -127,10 +127,8 @@ void OverseerNode::map_callback(
 
   try {
     // small timeout to avoid blocking forever if TF is missing
-    T_global_local = tf_buffer_->lookupTransform(target_frame, source_frame,
-                                                 msg->header.stamp,
-                                                 tf2::durationFromSec(0.5));
-    RCLCPP_WARN(this->get_logger(), "Timed out looking up transform.");
+    T_global_local = tf_buffer_->lookupTransform(target_frame, source_frame, now, 
+                                                rclcpp::Duration::from_seconds(0.1));
   } catch (const tf2::TransformException& ex) {
     RCLCPP_WARN(this->get_logger(),
                 "Overseer: TF lookup failed (%s -> %s) for robot %s: %s",

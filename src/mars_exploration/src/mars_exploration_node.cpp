@@ -51,7 +51,7 @@ MarsExplorationNode::MarsExplorationNode(const rclcpp::NodeOptions& options)
   double min_frontier_distance =
       this->declare_parameter<double>("min_frontier_distance", 0.5);
   max_goal_duration_sec_ =
-      this->declare_parameter<double>("max_goal_duration_sec", 60.0);
+      this->declare_parameter<double>("max_goal_duration_sec", 5.0);
   int border_margin_cells =
       this->declare_parameter<int>("border_margin_cells", 5);
 
