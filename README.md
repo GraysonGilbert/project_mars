@@ -253,13 +253,16 @@ All changes correspond to the proposal submitted to Acme Robotics for ENPM700.
 
 ### Phase 2
 
-1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?usp=sharing)
+1) [Presentation](https://youtu.be/4LAzF54b1SQ)
 
-2) [Sprint 2 Notes](https://docs.google.com/document/d/1RzEs2etGg3aeXfAYIdBvH6DnQ7stsbbt5ecsiO3mHLo/edit?usp=sharing)
+2) [Sprint 2 Notes](https://docs.google.com/document/d/1RzEs2etGg3aeXfAYIdBvH6DnQ7stsbbt5ecsiO3mHLo/edit?tab=t.0)
 
-3) [Project Presentation Video]()
+3) [Single Robot SLAM Demo](https://youtu.be/BxGX-qR2iZE)
 
-4) [Project Demonstration Video]()
+4) [Two Robot SLAM Demo](https://youtu.be/aSOs7f2JbLM)
+
+5) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?gid=0#gid=0)
+
 ---
 
 ## **License**
