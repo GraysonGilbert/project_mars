@@ -1,9 +1,72 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
+set(CMAKE_CXX_STANDARD 17)
 project(mars_fleet_bringup)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+# below sets up code coverage flags
+if(COVERAGE)
+  set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_CXX_FLAGS "--coverage")
+  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE "ON")
+endif()
+
+############################################
+# Set up unit test and code coverage generation.
+############################################
+# Must compile with debug, e.g,
+#   cmake -S ./ -B build/ -D CMAKE_BUILD_TYPE=Debug
+#
+# below sets up code coverage flags
+if(COVERAGE)
+  set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_CXX_FLAGS "--coverage")
+  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE "ON")
+endif()
+
+option(WANT_COVERAGE "this option enable coverage" ON)
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(WANT_COVERAGE OFF)
+endif()
+
+if(WANT_COVERAGE)
+  message("Enabling coverage")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
+  include(CodeCoverage)
+  # The following line come from cmake-modules/CodeCoverage.cmake
+  append_coverage_compiler_flags() # will add "--coverage" compilation flag
+  # Exclude certain directories from coverage analysis
+  set(COVERAGE_EXCLUDES
+    ${PROJECT_BINARY_DIR}
+    )
+endif()
+
+# create targets for building code coverage reports
+if(WANT_COVERAGE)
+  if(UNIT_TEST_ALREADY_RUN)
+    unset(EXECUTABLE)          # don't run unit test again, just generate the coverage report
+  else()
+    set(EXECUTABLE ctest test/)   # what to run insdie the build directory?
+  endif()
+  # unit test coverage:
+  setup_target_for_coverage_lcov ( # use lcov to generate coverage report
+    NAME test_coverage             # target name
+    EXECUTABLE ${EXECUTABLE}
+    EXCLUDE
+      "/usr/include/*"          # Don't analyze system headers
+      "/opt/*"                  # Don't analyze system headers
+    )
+endif()
+
+# Enables testing for this directory and below
+enable_testing()
+include(GoogleTest)
+
+# Sanity check:
+message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+message(STATUS "WANT_COVERAGE    = ${WANT_COVERAGE}")
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -67,60 +130,18 @@ doxygen_add_docs(docs           # target name
 #   DESTINATION share/${PROJECT_NAME}
 # )
 
-if(BUILD_TESTING)
-  find_package(ament_cmake_gtest REQUIRED)
-  find_package(rclcpp REQUIRED)
-  find_package(catch_ros2 REQUIRED)
+install(DIRECTORY
+  launch
+  worlds
+  map
+  params
+  urdf
+  config
+  DESTINATION share/${PROJECT_NAME}/
+)
 
-  add_executable(test_robot_namespace_topics
-    test/test_robot_namespace_topics.cpp
-  )
-
-  ament_target_dependencies(test_robot_namespace_topics
-    rclcpp
-  )
-
-  # Use the "with node main" target so ROS init/shutdown is handled
-  target_link_libraries(test_robot_namespace_topics
-    catch_ros2::catch_ros2_with_node_main
-  )
-
-  install(TARGETS test_robot_namespace_topics
-    DESTINATION lib/${PROJECT_NAME}
-  )
-
-  catch_ros2_add_integration_test(RobotNamespaceTopics_Test
-    LAUNCH_FILE test_robot_namespace_topics.launch.py
-  )
-
-  add_executable(test_slam_map_topic
-    test/test_slam_map_topic.cpp
-  )
-
-  ament_target_dependencies(test_slam_map_topic
-    rclcpp
-  )
-
-  target_link_libraries(test_slam_map_topic
-    catch_ros2::catch_ros2_with_node_main
-  )
-
-  install(TARGETS test_slam_map_topic
-    DESTINATION lib/${PROJECT_NAME}
-  )
-
-  catch_ros2_add_integration_test(SlamMapTopic_Test
-    LAUNCH_FILE test_slam_map_topic.launch.py
-  )
-
-  ament_add_gtest(test_build_passes
-    test/test_build_passes.cpp
-  )
-
-  # Link any dependencies your tests need:
-  target_link_libraries(test_build_passes
-    # ${PROJECT_NAME}
-  )
-endif()
+install(PROGRAMS
+  scripts/generate_coverage_report.bash
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

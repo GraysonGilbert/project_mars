@@ -2,7 +2,7 @@ name: Run Unit Test and Upload Coverage Report
 on:
   # Triggered whenever push to main 
   push:
-    branches: [ "main", "iteration_1" ]
+    branches: [ "main", "iteration_1", "iteration_2" ]
 
   # Triggered whenever a pull request is created on main
   pull_request:
@@ -32,10 +32,8 @@ jobs:
           sudo apt update
           sudo apt install -y doxygen lcov gcovr pandoc
           source /opt/ros/humble/setup.bash
-          sudo apt install -y \
-            ros-${ROS_DISTRO}-catch-ros2 \
-            ros-${ROS_DISTRO}-webots-ros2-driver \
-            ros-${ROS_DISTRO}-nav2-msgs
+          rosdep update
+          rosdep install --from-paths src --ignore-src -r -y
           
       # Run all unit test, integration test, and generate combined coverage report
       - name: Build, run unit test, and generate coverage report

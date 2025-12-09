@@ -43,7 +43,9 @@ set -u                          # re-enable undefined variable check
 # 1. Build for test coverage
 ##############################
 colcon build --cmake-args -DCOVERAGE=1 --packages-select \
-       mars_exploration mars_overseer
+       mars_exploration \
+       mars_overseer \
+       mars_fleet_bringup
 set +u                          # stop checking undefined variable  
 source install/setup.bash
 set -u                          # re-enable undefined variable check
@@ -52,8 +54,9 @@ set -u                          # re-enable undefined variable check
 # 2. run all tests
 ##############################
 colcon test --packages-select \
-       mars_exploration mars_overseer
-
+       mars_exploration \
+       mars_overseer \
+       mars_fleet_bringup
 ##############################
 # 3. get return status  (none-zero will cause the script to exit)
 ##############################
@@ -72,6 +75,9 @@ MARS_EXPLORATION_COVERAGE_INFO=./build/mars_exploration/test_coverage.info
 ## 4.2 mars_overseer:
 ros2 run mars_overseer generate_coverage_report.bash
 MARS_OVERSEER_COVERAGE_INFO=./build/mars_overseer/test_coverage.info
+## 4.3 mars_fleet_bringup: (currently has no unit test, but just for completeness)
+# ros2 run mars_fleet_bringup generate_coverage_report.bash
+# MARS_FLEET_BRINGUP_COVERAGE_INFO=./build/mars_fleet_bringup/test_coverage.info
 
 ##############################
 # 5. Combine coverage reports
@@ -84,8 +90,8 @@ fi
 mkdir $COMBINED_TEST_COVERAGE
 ## combine the reports
 ALL_COVERAGE_INFO=./build/test_coverage_merged.info
-lcov -a $MY_MODEL_COVERAGE_INFO -a \
-     $MY_CONTROLLER_COVERAGE_INFO -o \
+lcov -a $MARS_EXPLORATION_COVERAGE_INFO -a \
+     $MARS_OVERSEER_COVERAGE_INFO -o \
      $ALL_COVERAGE_INFO
 
 genhtml --output-dir $COMBINED_TEST_COVERAGE $ALL_COVERAGE_INFO

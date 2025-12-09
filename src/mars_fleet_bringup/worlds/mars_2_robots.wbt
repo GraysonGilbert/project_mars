@@ -24,23 +24,25 @@ EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/develop/projec
 
 WorldInfo {
   info [
-    "Simple TurtleBot3 Burger simulation that can be controlled by a ROS."
+    "Simple TurtleBot3 Burger simulation that can be controlled by ROS2 (two robots)."
   ]
-  title "ROS2 simulation of the TurtleBot3 Burger robot"
+  title "ROS2 simulation of two TurtleBot3 Burger robots"
   basicTimeStep 20
 }
 Viewpoint {
   orientation -0.2878951570967451 -0.16506369377382343 0.9433293992651676 4.177335774513749
   position 9.141595121588473 4.8923306199482335 3.8476210861955575
-  follow "TurtleBot3Burger:LDS-01"
 }
 TexturedBackground {
   texture "empty_office"
   skybox FALSE
 }
+
+# --- Robot 1 (unchanged pose from your single-robot world) ---
 TurtleBot3Burger {
-  translation 6.36 0 0
+  translation 6.36 3.0 0
   controller "<extern>"
+  name "robot_1"
   controllerArgs [
     ""
   ]
@@ -54,9 +56,34 @@ TurtleBot3Burger {
       name "inertial_unit"
     }
     RobotisLds01 {
+      name "LDS-01"
     }
   ]
 }
+
+# --- Robot 2 (new robot, offset in Y so they don't collide) ---
+TurtleBot3Burger {
+  translation 6.36 -3.0 0
+  controller "<extern>"
+  name "robot_2"
+  controllerArgs [
+    ""
+  ]
+  extensionSlot [
+    Solid {
+      name "imu_link"
+    }
+    GPS {
+    }
+    InertialUnit {
+      name "inertial_unit"
+    }
+    RobotisLds01 {
+      name "LDS-01"
+    }
+  ]
+}
+
 PottedTree {
   translation 7 -4 0
   rotation 0 0 1 1.5708

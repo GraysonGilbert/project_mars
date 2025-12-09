@@ -1,9 +1,72 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.14)
+set(CMAKE_CXX_STANDARD 17)
 project(mars_exploration)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
+
+# below sets up code coverage flags
+if(COVERAGE)
+  set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_CXX_FLAGS "--coverage")
+  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE "ON")
+endif()
+
+############################################
+# Set up unit test and code coverage generation.
+############################################
+# Must compile with debug, e.g,
+#   cmake -S ./ -B build/ -D CMAKE_BUILD_TYPE=Debug
+#
+# below sets up code coverage flags
+if(COVERAGE)
+  set(CMAKE_BUILD_TYPE "Debug")
+  set(CMAKE_CXX_FLAGS "--coverage")
+  set(CMAKE_CXX_OUTPUT_EXTENSION_REPLACE "ON")
+endif()
+
+option(WANT_COVERAGE "this option enable coverage" ON)
+if(NOT CMAKE_BUILD_TYPE MATCHES "Debug")
+  set(WANT_COVERAGE OFF)
+endif()
+
+if(WANT_COVERAGE)
+  message("Enabling coverage")
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake-modules")
+  include(CodeCoverage)
+  # The following line come from cmake-modules/CodeCoverage.cmake
+  append_coverage_compiler_flags() # will add "--coverage" compilation flag
+  # Exclude certain directories from coverage analysis
+  set(COVERAGE_EXCLUDES
+    ${PROJECT_BINARY_DIR}
+    )
+endif()
+
+# create targets for building code coverage reports
+if(WANT_COVERAGE)
+  if(UNIT_TEST_ALREADY_RUN)
+    unset(EXECUTABLE)          # don't run unit test again, just generate the coverage report
+  else()
+    set(EXECUTABLE ctest test/)   # what to run insdie the build directory?
+  endif()
+  # unit test coverage:
+  setup_target_for_coverage_lcov ( # use lcov to generate coverage report
+    NAME test_coverage             # target name
+    EXECUTABLE ${EXECUTABLE}
+    EXCLUDE
+      "/usr/include/*"          # Don't analyze system headers
+      "/opt/*"                  # Don't analyze system headers
+    )
+endif()
+
+# Enables testing for this directory and below
+enable_testing()
+include(GoogleTest)
+
+# Sanity check:
+message(STATUS "CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+message(STATUS "WANT_COVERAGE    = ${WANT_COVERAGE}")
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -117,6 +180,22 @@ install(TARGETS mars_exploration_node
   DESTINATION lib/${PROJECT_NAME}
 )
 
+###################################
+# Scan frame rewriter
+###################################
+add_executable(scan_frame_rewriter
+  src/scan_frame_rewriter.cpp
+)
+ament_target_dependencies(scan_frame_rewriter
+  rclcpp
+  sensor_msgs
+)
+install(
+  TARGETS
+    scan_frame_rewriter
+  DESTINATION lib/${PROJECT_NAME}
+)
+
 if(BUILD_TESTING)
   find_package(ament_cmake_gtest REQUIRED)
   find_package(catch_ros2 REQUIRED)
@@ -170,8 +249,6 @@ install(
 )
 install(DIRECTORY
   launch
-  resource
-  worlds
   DESTINATION share/${PROJECT_NAME}/
 )
 
@@ -181,5 +258,9 @@ ament_export_include_directories(
 ament_export_libraries(
   ${PROJECT_NAME}
 )
+
+install(PROGRAMS
+  scripts/generate_coverage_report.bash
+  DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
