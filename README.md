@@ -14,12 +14,31 @@
 **Project Code Name:** *Project MARS* (Multi-Agent Robotic SLAM)
 
 ---
+## Table of Contents
+
+1. [Overview](#overview)
+2. [Repository Layout](#repository-layout)
+3. [System Architecture](#system-architecture)
+   - [Per-Robot SLAM Stack](#1-per-robot-slam-stack)
+   - [Overseer Node (`mars_overseer`)](#2-overseer-node-mars_overseer)
+   - [Exploration (`mars_exploration`)](#3-exploration-mars_exploration)
+   - [Bringup (`mars_fleet_bringup`)](#4-bringup-mars_fleet_bringup)
+4. [Build Instructions](#build-instructions)
+5. [Running the System](#running-the-system)
+6. [Testing](#testing)
+7. [Documentation](#documentation)
+8. [Development Approach](#development-approach)
+9. [Deliverables](#deliverables)
+   - [Phase 1](#phase-1)
+   - [Phase 2](#phase-2)
+10. [License](#license)
+
 
 ## **Overview**
 
 Project MARS is a scalable multi-robot mapping and exploration system that uses **ROS 2 Humble**, **Webots**, and **slam_toolbox** to generate a unified global map of a large indoor environment.
 
-The system simulates **10 TurtleBot3 Waffle robots**, each performing SLAM inside its own ROS namespace. A central **Overseer Node** fuses each robot’s `map` topic into a single `/global_map`, enabling rapid, facility-scale mapping and digital-twin generation.
+The system simulates **2 TurtleBot3 Burger robots**, each performing SLAM inside its own ROS namespace. A central **Overseer Node** fuses each robot’s `map` topic into a single `/global_map`, enabling rapid, facility-scale mapping and digital-twin generation.
 
 This repository contains all code, documentation, test pipelines, and CI systems required for the ENPM700 Final Project.
 
@@ -35,10 +54,9 @@ project_mars/
 │   ├── mars_overseer/         # Map fusion and global SLAM node
 │   ├── mars_fleet_bringup/    # Launch files, configuration, multi-robot simulation
 │   ├── mars_exploration/      # Sector-based and frontier-based exploration
-│   ├── my_controller/         # (From boilerplate) Example controller / pattern
-│   └── my_model/              # (From boilerplate) Example model library
 ├── .github/                   # CI, test, docs build configurations
-├── docs/                      # (Will contain UML + documentation)
+├── docs/                      # Auto-generated documentation
+├── UML/                       # Initial and revised UML diagrams
 ├── README.md                  # This file
 └── this-is-a-colcon-workspace
 ```
@@ -54,6 +72,7 @@ This structure is designed to be compatible with GitHub Actions, CodeCov, and do
 Each TurtleBot runs:
 
 * `/robot_i/scan` (LiDAR)
+* `/root_i/scan_corrected` (required to workaround LiDAR frame header bug)
 * `/robot_i/odom`
 * `/robot_i/map` (via slam_toolbox)
 * REP-105 compliant TF tree
@@ -118,31 +137,32 @@ source install/setup.bash
 # Build only the mars_overseer package
 colcon build --packages-select mars_overseer
 source install/setup.bash
+
+# Build only the mars_fleet_bringup package
+colcon build --packages-select mars_fleet_bringup
+source install/setup.bash
 ```
 
 ---
 
 ## **Running the System**
-
-*(Sprint 2 - placeholder for now)*
-
-Expected final commands:
+To run the default project demonstration, run the following command in the root of the project workspace:
 
 ```bash
-# Launch Webots multi-robot world
-ros2 launch mars_fleet_bringup multi_robot_webots.launch.py
-
-# Visualize fused map
-ros2 launch mars_fleet_bringup rviz_global_map.launch.py
+# Launch Webots multi-robot demonstration
+ros2 launch mars_fleet_bringup mars_fleet_bringup.launch.py
 ```
 
-Optionallly you can run individual packages in this workspace:
+Optionallly, you can run other simulations with more or less robots with the folllowing:
 
 ```bash
-# Run the mars_exploration single robot SLAM demo
-ros2 launch mars_exploration single_robot.launch.py
+# Run the 1 robot SLAM demo
+ros2 launch mars_exploration mars_fleet_bringup.launch.py num_robots:1 world_file:='mars_1_robots.wbt'
 
-# Run the mars_overseer node
+# Run the 3 robot SLAM demo (Currently the 3 robot demo is not fully functional)
+ros2 launch mars_exploration mars_fleet_bringup.launch.py num_robots:3 world_file:='mars_3_robots.wbt'
+
+# Run the mars_overseer node by itself
 ros2 run mars_overseer overseer_node --ros-args -p use_sim_time:=true
 ```
 
@@ -168,6 +188,10 @@ colcon test-result --verbose
 
 # Run the mars_overseer tests
 colcon test --packages-select mars_overseer
+colcon test-result --verbose
+
+# Run the mars_fleet_bringup tests
+colcon test --packages-select mars_fleet_bringup
 colcon test-result --verbose
 ```
 
@@ -221,12 +245,21 @@ All changes correspond to the proposal submitted to Acme Robotics for ENPM700.
 
 ## **Deliverables**
 
-# Phase 1
+### Phase 1
 
-1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?gid=241005242#gid=241005242)
+1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?usp=sharing)
 
 2) [Sprint 1 Notes](https://docs.google.com/document/d/1vtnkgUcWeYFP_rzQFlWj7m7FjFuriQDOsglt_6psIaA/edit?tab=t.0)
 
+### Phase 2
+
+1) [AIP Backlog](https://docs.google.com/spreadsheets/d/1VFT9h6v-TJoIZZqw14fOZrGEaPpVfkw-nTQ9vnsXJHE/edit?usp=sharing)
+
+2) [Sprint 2 Notes](https://docs.google.com/document/d/1RzEs2etGg3aeXfAYIdBvH6DnQ7stsbbt5ecsiO3mHLo/edit?usp=sharing)
+
+3) [Project Presentation Video]()
+
+4) [Project Demonstration Video]()
 ---
 
 ## **License**
