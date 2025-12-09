@@ -27,6 +27,8 @@
 #include "mars_overseer/overseer.hpp"
 
 #include "mars_overseer/map_merger.hpp"
+#include <cstddef>
+#include <rclcpp/logging.hpp>
 
 OverseerNode::OverseerNode() : Node("overseer_node") {
   // Create TF broadcaster
@@ -117,7 +119,9 @@ void OverseerNode::map_callback(
   // 1) Look up transform from local map frame -> global_map
   // ---------------------------------------------------------------------
   const std::string target_frame = "global_map";
-  const std::string source_frame = msg->header.frame_id;  // e.g. "robot_1/map"
+  const std::string source_frame = robot_id + "/odom";  // e.g. "robot_1/map"
+
+  RCLCPP_INFO(this->get_logger(), "Looking up transform from %s to %s", source_frame.c_str(), target_frame.c_str());
 
   geometry_msgs::msg::TransformStamped T_global_local;
 
@@ -125,7 +129,8 @@ void OverseerNode::map_callback(
     // small timeout to avoid blocking forever if TF is missing
     T_global_local = tf_buffer_->lookupTransform(target_frame, source_frame,
                                                  msg->header.stamp,
-                                                 tf2::durationFromSec(0.1));
+                                                 tf2::durationFromSec(0.5));
+    RCLCPP_WARN(this->get_logger(), "Timed out looking up transform.");
   } catch (const tf2::TransformException& ex) {
     RCLCPP_WARN(this->get_logger(),
                 "Overseer: TF lookup failed (%s -> %s) for robot %s: %s",

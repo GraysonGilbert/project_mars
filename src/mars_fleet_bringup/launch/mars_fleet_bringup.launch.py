@@ -17,8 +17,8 @@ def launch_robots(context: LaunchContext, *args, **kwargs):
     use_sim_time = LaunchConfiguration('use_sim_time').perform(context)
 
     robot_map_origins = {
-        1: '0.0 0.0 0.0',
-        2: '-0.5 8.5 0.0',
+        1: '0.0  0.0 0.0',
+        2: '0.0 -6.0 0.0',
     }
 
     actions = []

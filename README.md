@@ -88,6 +88,13 @@ Manages:
 
 ## **Build Instructions**
 
+Install necessary dependencies with rosdep:
+
+```bash
+rosdep update
+rosdep install --from-paths src --ignore-src -r -y
+```
+
 Make sure ROS 2 Humble is sourced:
 
 ```bash

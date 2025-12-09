@@ -40,7 +40,7 @@ TexturedBackground {
 
 # --- Robot 1 (unchanged pose from your single-robot world) ---
 TurtleBot3Burger {
-  translation 8.5 -4.5 0
+  translation 6.36 3.0 0
   controller "<extern>"
   name "robot_1"
   controllerArgs [
@@ -63,7 +63,7 @@ TurtleBot3Burger {
 
 # --- Robot 2 (new robot, offset in Y so they don't collide) ---
 TurtleBot3Burger {
-  translation 8 4 0
+  translation 6.36 -3.0 0
   controller "<extern>"
   name "robot_2"
   controllerArgs [
