@@ -71,7 +71,7 @@ class MarsExplorationNode : public rclcpp::Node {
   double min_goal_distance_{0.3};  // m: do not send goals closer than this
   double reject_retry_delay_sec_{
       3.0};  // s: wait after rejection before trying again
-  double control_rate_hz_{0.1};
+    double control_rate_hz_{20.0};
   std::string goal_topic_{"goal_pose"};
   std::string cmd_vel_topic_{"cmd_vel"};
   std::string map_topic_{"map"};
